@@ -6,18 +6,15 @@ try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem,
-        ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition,
     )
     from autoscript_sdb_microscope_client.structures import (
-        ManipulatorPosition,
         MoveSettings,
         StagePosition,
         AdornedImage,
     )
-except:
+except Exception as e:
     demo = True
-    print('demo mode, no Autoscript detected')
+    print(f'demo mode, no Autoscript detected, exception {e}')
 
 from main import BeamType
 

@@ -459,7 +459,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         for i in range(len(ranges)):
             if ranges[i]==0 or deltas[i]==0:
                 NN[i] = 1
-            elif i<2:
+            elif i<=2:
                 NN[i] = int( 2*ranges[i] / deltas[i] ) + 1
             else:
                 NN[i] = int(   ranges[i] / deltas[i] ) + 1
