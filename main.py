@@ -323,9 +323,23 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self._update_stack_settings()
         gui_settings = self.create_settings_dict()
         timestamp = utils.current_timestamp()
+        sample_name = self.plainTextEdit_sample_name.toPlainText()
         self.pushButton_acquire.setEnabled(False)
+        self.pushButton_abort_stack_collection.setEnabled(True)
+
+        """Store the current microscope state, including the current position"""
         self.microscope._store_current_microscope_state()
         print(self.microscope.stored_state)
+
+        """Create directory for saving the stack"""
+        if self.DIR:
+            self.stack_dir = os.path.join(self.DIR, 'stack_' + sample_name + '_' + timestamp)
+        else:
+            self.stack_dir = os.path.join(os.getcwd(), 'stack_' + sample_name + '_' + timestamp)
+        if not os.path.isdir(self.stack_dir):
+            os.mkdir(self.stack_dir)
+
+        self.label_messages.setText(f"stack sve dir {self.stack_dir}")
 
         ranges = [self.stack_settings.x_range, self.stack_settings.y_range, self.stack_settings.z_range,
                   self.stack_settings.t_range, self.stack_settings.r_range]
@@ -333,6 +347,82 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                   self.stack_settings.dt, self.stack_settings.dr]
         NN = [self.stack_settings.Nx, self.stack_settings.Ny, self.stack_settings.Nz,
               self.stack_settings.Nt, self.stack_settings.Nr]
+        Nx, Ny, Nz, Nt, Nr = self.stack_settings.Nx, self.stack_settings.Ny, self.stack_settings.Nz, \
+                             self.stack_settings.Nt, self.stack_settings.Nr
+
+        """initial stage coordinates"""
+        x0 = self.microscope.stored_state.x
+        y0 = self.microscope.stored_state.y
+        z0 = self.microscope.stored_state.z
+        t0 = self.microscope.stored_state.t
+        r0 = self.microscope.stored_state.r
+        scan_rot0 = self.microscope.stored_state.scan_rotation_angle
+
+        """move to the position from where to start the long scan
+           move negative x,y,z by half-range (range = 2*x_range etc)
+           do not move the tilt or stage rotation, the current position are the start point
+        """
+        if Nx >= 3:
+            self.microscope.move_stage(x=-self.stack_settings.x_range, move_type="Relative")
+        if Ny >= 3:
+            self.microscope.move_stage(y=-self.stack_settings.y_range, move_type="Relative")
+        if Nz >= 3:
+            self.microscope.move_stage(z=-self.stack_settings.z_range, move_type="Relative")
+
+
+        def _run_loop():
+            counter = 0
+            for ii in range(Nx):
+                self.label_x.setText(f"{ii + 1} of")
+                if Nx>=3: self.microscope.move_stage(x=self.stack_settings.dx,
+                                                     move_type="Relative")
+                for jj in range(Ny):
+                    self.label_y.setText(f"{jj + 1} of")
+                    if Ny>=3: self.microscope.move_stage(y=self.stack_settings.dy,
+                                                         move_type="Relative")
+                    for kk in range(Nz):
+                        self.label_z.setText(f"{kk + 1} of")
+                        if Nz>=3: self.microscope.move_stage(z=self.stack_settings.dz,
+                                                             move_type="Relative")
+                        for oo in range(Nt):
+                            self.label_t.setText(f"{oo + 1} of")
+                            if Nt>=2: self.microscope.move_stage(t=self.stack_settings.dt,
+                                                                 move_type="Relative")
+                            for qq in range(Nr):
+                                """update gui settings manually if the scan is long"""
+                                gui_settings = self.create_settings_dict()
+                                self.label_r.setText(f"{qq + 1} of")
+                                if Nt>=2:
+                                    self.microscope.move_stage(t=self.stack_settings.dt,
+                                                               move_type="Relative")
+                                file_name = '%06d_'%counter + sample_name + '_' + \
+                                            utils.current_timestamp() + '.tif'
+
+                                image = self.microscope.acquire_image(gui_settings=gui_settings)
+                                utils.save_image(image, path=self.stack_dir, file_name=file_name)
+
+                                self.repaint()  # update the GUI to show the progress
+                                QtWidgets.QApplication.processEvents()
+
+                                if self._abort_clicked_status == True:
+                                    print('Abort clicked')
+                                    self._abort_clicked_status = False  # reinitialise back to False
+                                    return
+
+                                counter += 1
+                                print(f'sleeping for {self.gui_settings["imaging"]["dwell_time"]}')
+                                time.sleep(self.gui_settings["imaging"]["dwell_time"])
+
+        _run_loop()
+        self.pushButton_acquire.setEnabled(True)
+        self.pushButton_abort_stack_collection.setEnabled(False)
+
+
+
+
+
+
+
 
 
 
@@ -430,6 +520,6 @@ def main(demo):
 
 if __name__ == '__main__':
     main(demo=True)
-    #stack_settings = StackSettings()
+    stack_settings = StackSettings()
     #stack_settings.x_range = 100
 

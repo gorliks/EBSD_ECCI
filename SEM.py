@@ -167,7 +167,7 @@ class Microscope():
             return image
 
         else:
-            print('demo mode')
+            print('demo mode   ')
             if gui_settings is not None:
                 settings = self.update_image_settings(gui_settings)
                 resolution = settings.resolution
