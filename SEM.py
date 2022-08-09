@@ -97,7 +97,6 @@ class Microscope():
         try:
             print('initialising microscope')
             self.microscope = SdbMicroscopeClient()
-            return self.microscope
         except:
             print('Autoscript not installed on the computer, using demo mode')
             self.demo = True
@@ -436,6 +435,5 @@ if __name__ == '__main__':
     image_settings = microscope.update_image_settings(gui_settings=gui_settings)
     print(image_settings)
 
-    microscope.save_image(image=1)
 
 
