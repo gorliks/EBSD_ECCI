@@ -369,7 +369,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         if Nz >= 3:
             self.microscope.move_stage(z=-self.stack_settings.z_range, move_type="Relative")
 
-
         def _run_loop():
             counter = 0
             for ii in range(Nx):
@@ -459,7 +458,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         for i in range(len(ranges)):
             if ranges[i]==0 or deltas[i]==0:
                 NN[i] = 1
-            elif i<2:
+            elif i<=2:
                 NN[i] = int( 2*ranges[i] / deltas[i] ) + 1
             else:
                 NN[i] = int(   ranges[i] / deltas[i] ) + 1
