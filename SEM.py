@@ -13,8 +13,12 @@ import numpy as np
 from dataclasses import dataclass
 import movement
 import utils
-from main import BeamType
 
+#from main import BeamType
+from enum import Enum
+class BeamType(Enum):
+    ION = 'ION'
+    ELECTRON = 'ELECTRON'
 
 @dataclass
 class MicroscopeState:
@@ -314,6 +318,33 @@ class Microscope():
             self.stored_state.scan_rotation_angle = 0
 
 
+    def _restore_microscope_state(self, state : MicroscopeState):
+        """Restores the microscope state from the stored MicroscopeState variable
+        Args:
+            state : MicroscopeState
+            TODO basic restore (state position, imaging conditions),
+            full restore (volage, beam current etc)
+        Returns
+        -------
+        None
+        """
+        try:
+            self.move_stage(x=state.x, y=state.y, z=state.z,
+                            t=state.t, r=state.r,
+                            move_type='Absolute')
+            self.microscope.beams.electron_beam.horizontal_field_width.value = \
+                state.horizontal_field_width
+            self.microscope.beams.electron_beam.scanning.resolution = state.resolution
+            self.microscope.beams.electron_beam.scanning.rotation.value =\
+                state.scan_rotation_angle
+            self.microscope.detector.brightness.value = state.brighness
+            self.microscope.detector.contrast.value = state.contrast
+        except:
+            print('Could not restore the microscope state')
+
+
+
+
 
     def update_image_settings(self,
                               gui_settings: dict,
@@ -438,6 +469,8 @@ if __name__ == '__main__':
     }
     image_settings = microscope.update_image_settings(gui_settings=gui_settings)
     print(image_settings)
+
+    microscope._store_current_microscope_state()
 
 
 

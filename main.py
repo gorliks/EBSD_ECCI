@@ -163,7 +163,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         quadrant = int(self.comboBox_quadrant.currentText())
         image = \
             self.microscope.last_image(quadrant=quadrant)
-        self.update_display(image=image)
+        self.update_display(image=iÂage)
 
 
     def update_stage_position(self):
@@ -423,6 +423,9 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         _run_loop()
         self.pushButton_acquire.setEnabled(True)
         self.pushButton_abort_stack_collection.setEnabled(False)
+
+        print('End of long scan, returning to the stored microoscope state', self.microscope.stored_state)
+        self.microscope._restore_microscope_state(state=self.microscope.stored_state)
 
 
     def _abort_clicked(self):
