@@ -300,8 +300,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         total_frames = self.stack_settings.Nx * self.stack_settings.Ny * self.stack_settings.Nz * \
                        self.stack_settings.Nt * self.stack_settings.Nr
         overhead = 1.25 # to move the stage etc
-        time_to_acquire = total_frames * self.gui_settings["imaging"]["dwell_time"] *\
-                          pixels_in_frame * 1e-6 * overhead
+        time_to_acquire = total_frames * self.gui_settings["imaging"]["dwell_time"] * 1e-6 *\
+                          pixels_in_frame * overhead
         self.label_messages.setText(f"Time to collect {total_frames} frames at {resolution} is {time_to_acquire:.1f} s "
                                     f"or {time_to_acquire/60:.1f} min")
 

@@ -147,6 +147,7 @@ class Microscope():
             image.data = a numpy array of the image pixels
             image.metadata.binary_result.pixel_size.x = image pixel size in x
             image.metadata.binary_result.pixel_size.y = image pixel size in y
+            dwell_time in microseconds! x1e-6 coversion to seconds
         """
         print('acquiring image...')
         # logging.info(f"acquiring new {beam_type.name} image.")
@@ -156,12 +157,12 @@ class Microscope():
                 settings = self.update_image_settings(gui_settings)
                 self.microscope.imaging.set_active_view(settings.quadrant)
                 self.microscope.beams.electron_beam.horizontal_field_width.value = \
-                    settings.horizontal_field_width
+                    settings.horizontal_field_width * 1e-6
                 if settings["autocontrast"]==True:
                     self.autocontrast(quadrant=settings.quadrant)
 
                 grab_frame_settings = GrabFrameSettings(resolution=settings.resolution,
-                                                        dwell_time=settings.dwell_time,
+                                                        dwell_time=settings.dwell_time * 1e-6,
                                                         bit_depth=settings.bit_depth
                                                         )
                 image = self.microscope.imaging.grab_frame(grab_frame_settings)
@@ -220,7 +221,8 @@ class Microscope():
             #[x, y, z, t, r] = np.random.randint( 0,5, [5,1] ).astype(float)
             [x, y, z, t, r] = np.random.rand(5, 1)
             MicroscopeState.update_stage_position(self.microscope_state,
-                                                  x=x[0], y=y[0], z=z[0], t=t[0], r=r[0])
+                                                  x=x[0], y=y[0], z=z[0],
+                                                  t=t[0], r=r[0])
             print(MicroscopeState.get_stage_position(self.microscope_state))
             return (x[0], y[0], z[0], t[0], r[0])
 
