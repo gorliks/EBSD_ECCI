@@ -108,8 +108,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def create_settings_dict(self) -> dict:
         resolution = self.comboBox_resolution.currentText()
-        dwell_time = self.spinBox_dwell_time.value()
-        horizontal_field_width = self.spinBox_horizontal_field_width.value()
+        dwell_time = self.spinBox_dwell_time.value() * 1e-6
+        horizontal_field_width = self.spinBox_horizontal_field_width.value() * 1e-6
         detector = self.comboBox_detector.currentText()
         autocontrast = self.checkBox_autocontrast.isChecked()
         save = self.checkBox_save_image.isChecked()
@@ -169,9 +169,9 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
     def update_stage_position(self):
         self.comboBox_move_type.setCurrentText("Absolute")
         self.microscope.update_stage_position()
-        self.doubleSpinBox_stage_x.setValue(self.microscope.microscope_state.x)
-        self.doubleSpinBox_stage_y.setValue(self.microscope.microscope_state.y)
-        self.doubleSpinBox_stage_z.setValue(self.microscope.microscope_state.z)
+        self.doubleSpinBox_stage_x.setValue(self.microscope.microscope_state.x / 1-6)
+        self.doubleSpinBox_stage_y.setValue(self.microscope.microscope_state.y / 1e-6)
+        self.doubleSpinBox_stage_z.setValue(self.microscope.microscope_state.z / 1e-6)
         r = np.rad2deg(self.microscope.microscope_state.r)
         self.doubleSpinBox_stage_r.setValue(r)
         t = np.rad2deg(self.microscope.microscope_state.t)
@@ -182,11 +182,13 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         compucentric = self.checkBox_compucentric.isChecked()
         move_type = self.comboBox_move_type.currentText()
         print('compucentric = ', compucentric, '; movw_type = ', move_type)
-        x = self.doubleSpinBox_stage_x.value()
-        y = self.doubleSpinBox_stage_y.value()
-        z = self.doubleSpinBox_stage_z.value()
+        x = self.doubleSpinBox_stage_x.value() * 1e-6
+        y = self.doubleSpinBox_stage_y.value() * 1e-6
+        z = self.doubleSpinBox_stage_z.value() * 1e-6
         r = self.doubleSpinBox_stage_r.value()
         t = self.doubleSpinBox_stage_t.value()
+        r = np.deg2rad(r)
+        t = np.deg2rad(t)
         self.microscope.move_stage(x=x,y=y,z=z,
                                    t=t, r=r,
                                    compucentric=compucentric,
@@ -300,7 +302,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         total_frames = self.stack_settings.Nx * self.stack_settings.Ny * self.stack_settings.Nz * \
                        self.stack_settings.Nt * self.stack_settings.Nr
         overhead = 1.25 # to move the stage etc
-        time_to_acquire = total_frames * self.gui_settings["imaging"]["dwell_time"] * 1e-6 *\
+        time_to_acquire = total_frames * self.gui_settings["imaging"]["dwell_time"] * \
                           pixels_in_frame * overhead
         self.label_messages.setText(f"Time to collect {total_frames} frames at {resolution} is {time_to_acquire:.1f} s "
                                     f"or {time_to_acquire/60:.1f} min")
@@ -435,32 +437,19 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     def _update_stack_settings(self):
         print('uploading stack settings...')
         print(self.stack_settings)
-        self.stack_settings.x_range = self.doubleSpinBox_x_range.value()
-        self.stack_settings.dx = self.doubleSpinBox_x_step.value()
-        self.stack_settings.y_range = self.doubleSpinBox_y_range.value()
-        self.stack_settings.dy = self.doubleSpinBox_y_step.value()
-        self.stack_settings.z_range = self.doubleSpinBox_z_range.value()
-        self.stack_settings.dz = self.doubleSpinBox_z_step.value()
-        self.stack_settings.t_range = self.doubleSpinBox_t_range.value()
-        self.stack_settings.dt = self.doubleSpinBox_t_step.value()
-        self.stack_settings.r_range = self.doubleSpinBox_r_range.value()
-        self.stack_settings.dr = self.doubleSpinBox_r_step.value()
+        self.stack_settings.x_range = self.doubleSpinBox_x_range.value() * 1e-6
+        self.stack_settings.dx = self.doubleSpinBox_x_step.value() * 1e-6
+        self.stack_settings.y_range = self.doubleSpinBox_y_range.value() * 1e-6
+        self.stack_settings.dy = self.doubleSpinBox_y_step.value() * 1e-6
+        self.stack_settings.z_range = self.doubleSpinBox_z_range.value() * 1e-6
+        self.stack_settings.dz = self.doubleSpinBox_z_step.value() * 1e-6
+        self.stack_settings.t_range = np.deg2rad( self.doubleSpinBox_t_range.value() )
+        self.stack_settings.dt = np.deg2rad( self.doubleSpinBox_t_step.value() )
+        self.stack_settings.r_range = np.deg2rad( self.doubleSpinBox_r_range.value() )
+        self.stack_settings.dr = np.deg2rad( self.doubleSpinBox_r_step.value() )
 
         ranges = [self.stack_settings.x_range, self.stack_settings.y_range, self.stack_settings.z_range,
                   self.stack_settings.t_range, self.stack_settings.r_range]
@@ -493,11 +482,11 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         elif move_type == "Absolute":
             coords = self.microscope.update_stage_position()
 
-        self.doubleSpinBox_stage_x.setValue(coords[0])
-        self.doubleSpinBox_stage_y.setValue(coords[1])
-        self.doubleSpinBox_stage_z.setValue(coords[2])
-        self.doubleSpinBox_stage_t.setValue(coords[3])
-        self.doubleSpinBox_stage_r.setValue(coords[4])
+        self.doubleSpinBox_stage_x.setValue(coords[0] / 1e-6)
+        self.doubleSpinBox_stage_y.setValue(coords[1] / 1e-6)
+        self.doubleSpinBox_stage_z.setValue(coords[2] / 1e-6)
+        self.doubleSpinBox_stage_t.setValue( np.rad2deg(coords[3]) )
+        self.doubleSpinBox_stage_r.setValue( np.rad2deg(coords[4]) )
 
 
 

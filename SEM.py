@@ -212,10 +212,10 @@ class Microscope():
         try:
             position = \
                 self.microscope.specimen.stage.current_position
-            return (position.x/1e-6, position.y/1e-6, position.z/1e-6,
-                    np.rad2deg(position.t),
-                    np.rad2deg(position.r)
-                    )
+            MicroscopeState.update_stage_position(self.microscope_state,
+                                                  x=position.x, y=position.y, z=position.z,
+                                                  t=pozition.t, r=position.r)
+            return position
         except:
             print('demo mode, simulated coordinates are:')
             #[x, y, z, t, r] = np.random.randint( 0,5, [5,1] ).astype(float)
@@ -331,14 +331,17 @@ class Microscope():
         None
         """
         try:
-            self.move_stage(x=state.x, y=state.y, z=state.z,
-                            t=state.t, r=state.r,
+            """move function take x,y,z in micrometres and r,t in degrees
+            the stored values are straight from the microscope in metres and rad
+            """
+            self.move_stage(x=state.x/1e-6, y=state.y/1e-6, z=state.z/1e-6,
+                            t=np.rad2deg(state.t), r=np.rad2deg(state.r),
                             move_type='Absolute')
             self.microscope.beams.electron_beam.horizontal_field_width.value = \
-                state.horizontal_field_width
+                state.horizontal_field_width # no need of conversion, the state value from the machine
             self.microscope.beams.electron_beam.scanning.resolution = state.resolution
             self.microscope.beams.electron_beam.scanning.rotation.value =\
-                state.scan_rotation_angle
+                state.scan_rotation_angle # no need of conversion, the state value from the machine
             self.microscope.detector.brightness.value = state.brighness
             self.microscope.detector.contrast.value = state.contrast
         except:

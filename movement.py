@@ -73,14 +73,9 @@ def move_relative(microscope,
                   ):
     """Move the stage to the desired position in a safe manner, using compucentric rotation.
         Supports movements in the stage_position coordinate system
-        The units of movement vector are in micrometres. The system requires metres
-        The units of supplied angles are degrees, the systems needs radians
+        The units of movement are  metres
+        The units of supplied angles are radians
     """
-    dx *= 1e-6
-    dy *= 1e-6
-    dz *= 1e-6
-    dt = np.deg2rad(dt)
-    dr = np.deg2rad(dr)
     try:
         stage = microscope.specimen.stage
         stage_settings = MoveSettings(rotate_compucentric=True)
@@ -89,9 +84,8 @@ def move_relative(microscope,
         stage.relative_move(new_stage_position, stage_settings)
 
         position = stage.current_position
-        return (position.x / 1e-6, position.y / 1e-6, position.z / 1e-6,
-                np.rad2deg(position.t),
-                np.rad2deg(position.r)
+        return (position.x, position.y, position.z,
+                position.t, position.r
                 )
     except:
         print('movement: Could not execute movement, demo mode')
@@ -108,14 +102,9 @@ def move_absolute(microscope,
                   ):
     """Move the stage to the desired position in a safe manner, using compucentric rotation.
         Supports movements in the stage_position coordinate system
-        The units of movement vector are in micrometres. The system requires metres
-        The units of supplied angles are degrees, the systems needs radians
+        The units of movement vector are in metres
+        The units of supplied angles are radians
     """
-    x *= 1e-6
-    y *= 1e-6
-    z *= 1e-6
-    t = np.deg2rad(t)
-    r = np.deg2rad(r)
     try:
         stage = microscope.specimen.stage
         stage_settings = MoveSettings(rotate_compucentric=True)
@@ -139,9 +128,8 @@ def move_absolute(microscope,
             stage_settings
         )
         position = stage.current_position
-        return (position.x / 1e-6, position.y / 1e-6, position.z / 1e-6,
-                np.rad2deg(position.t),
-                np.rad2deg(position.r)
+        return (position.x, position.y, position.z,
+                position.t, position.r
                 )
     except:
         print('movement: Could not execute movement, demo mode')
