@@ -205,9 +205,12 @@ class Microscope():
 
     def update_stage_position(self):
         try:
-            current_position = \
+            position = \
                 self.microscope.specimen.stage.current_position
-            return current_position
+            return (position.x/1e-6, position.y/1e-6, position.z/1e-6,
+                    np.rad2deg(position.t),
+                    np.rad2deg(position.r)
+                    )
         except:
             print('demo mode, simulated coordinates are:')
             #[x, y, z, t, r] = np.random.randint( 0,5, [5,1] ).astype(float)
@@ -262,14 +265,20 @@ class Microscope():
         """
         rotation_angle_rad = np.deg2rad(rotation_angle)
 
-        if type=="Relative":
-            """Change the current scan rotation by the specified value"""
-            self.microscope.beams.ion_beam.scanning.rotation.value += rotation_angle_rad
-        else:
-            """Absolute value of the scan rotation"""
-            self.microscope.beams.ion_beam.scanning.rotation.value = rotation_angle_rad
+        try:
+            if type=="Relative":
+                """Change the current scan rotation by the specified value"""
+                self.microscope.beams.ion_beam.scanning.rotation.value += rotation_angle_rad
+            else:
+                """Absolute value of the scan rotation"""
+                self.microscope.beams.ion_beam.scanning.rotation.value = rotation_angle_rad
 
-        return np.rad2deg(self.microscope.beams.ion_beam.scanning.rotation.value)
+            return np.rad2deg(self.microscope.beams.ion_beam.scanning.rotation.value)
+
+        except:
+            print(f'demo mode, scan rotation {type} by {rotation_angle} deg')
+            return rotation_angle
+
 
 
     def _store_current_microscope_state(self):
@@ -350,14 +359,9 @@ class Microscope():
             self.horizontal_field_width = gui_settings["imaging"]["horizontal_field_width"]
 
         if autocontrast:
-            self.autocontrast = autocontrast
+            self.__autocontrast = autocontrast
         else:
-            self.autocontrast = gui_settings["imaging"]["autocontrast"]
-
-        if autocontrast:
-            self.autocontrast = autocontrast
-        else:
-            self.autocontrast = gui_settings["imaging"]["autocontrast"]
+            self.__autocontrast = gui_settings["imaging"]["autocontrast"]
 
         if beam_type:
             self.beam_type = beam_type
@@ -396,7 +400,7 @@ class Microscope():
             dwell_time=self.dwell_time,
             horizontal_field_width=self.horizontal_field_width,
             quadrant=self.quadrant,
-            autocontrast=self.autocontrast,
+            autocontrast=self.__autocontrast,
             beam_type=BeamType.ELECTRON if beam_type is None else beam_type,
             save=self.save,
             path=self.path,

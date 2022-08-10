@@ -2,7 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1985e658-b8f8-4b3f-b058-2413bfb776c0" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SEM.py" beforeDir="false" afterPath="$PROJECT_DIR$/SEM.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/movement.py" beforeDir="false" afterPath="$PROJECT_DIR$/movement.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qtdesigner_files/main_gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/qtdesigner_files/main_gui.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" beforeDir="false" afterPath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,5 +60,12 @@
       <updated>1660017787003</updated>
     </task>
     <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="self.microscope.autocontrast" language="Python" />
+      </configuration>
+    </watches-manager>
   </component>
 </project>

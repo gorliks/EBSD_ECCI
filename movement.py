@@ -73,15 +73,26 @@ def move_relative(microscope,
                   ):
     """Move the stage to the desired position in a safe manner, using compucentric rotation.
         Supports movements in the stage_position coordinate system
+        The units of movement vector are in micrometres. The system requires metres
+        The units of supplied angles are degrees, the systems needs radians
     """
+    dx *= 1e-6
+    dy *= 1e-6
+    dz *= 1e-6
+    dt = np.deg2rad(dt)
+    dr = np.deg2rad(dr)
     try:
         stage = microscope.specimen.stage
         stage_settings = MoveSettings(rotate_compucentric=True)
         new_stage_position = StagePosition(x=dx, y=dy, z=dz,
                                            t=dt, r=dr)
         stage.relative_move(new_stage_position, stage_settings)
-        return stage.current_position
 
+        position = stage.current_position
+        return (position.x / 1e-6, position.y / 1e-6, position.z / 1e-6,
+                np.rad2deg(position.t),
+                np.rad2deg(position.r)
+                )
     except:
         print('movement: Could not execute movement, demo mode')
         return (5,5,5,5,5)
@@ -97,19 +108,22 @@ def move_absolute(microscope,
                   ):
     """Move the stage to the desired position in a safe manner, using compucentric rotation.
         Supports movements in the stage_position coordinate system
+        The units of movement vector are in micrometres. The system requires metres
+        The units of supplied angles are degrees, the systems needs radians
     """
-
+    x *= 1e-6
+    y *= 1e-6
+    z *= 1e-6
+    t = np.deg2rad(t)
+    r = np.deg2rad(r)
     try:
         stage = microscope.specimen.stage
         stage_settings = MoveSettings(rotate_compucentric=True)
 
-        r_rad = np.deg2rad(r)
-        t_rad = np.deg2rad(t)
-
         """First rotate, then move x,y,z and then tilt"""
         """1. Rotate"""
         stage.absolute_move(
-            StagePosition(r=r_rad),
+            StagePosition(r=r),
             stage_settings
         )
 
@@ -121,11 +135,14 @@ def move_absolute(microscope,
 
         """3. Tilt"""
         stage.absolute_move(
-            StagePosition(t=t_rad),
+            StagePosition(t=t),
             stage_settings
         )
-        return stage.current_position
-
+        position = stage.current_position
+        return (position.x / 1e-6, position.y / 1e-6, position.z / 1e-6,
+                np.rad2deg(position.t),
+                np.rad2deg(position.r)
+                )
     except:
         print('movement: Could not execute movement, demo mode')
         return (5,5,5,5,5)

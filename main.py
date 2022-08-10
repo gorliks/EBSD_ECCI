@@ -186,9 +186,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         y = self.doubleSpinBox_stage_y.value()
         z = self.doubleSpinBox_stage_z.value()
         r = self.doubleSpinBox_stage_r.value()
-        r = np.deg2rad(r)
         t = self.doubleSpinBox_stage_t.value()
-        t = np.deg2rad(t)
         self.microscope.move_stage(x=x,y=y,z=z,
                                    t=t, r=r,
                                    compucentric=compucentric,
@@ -392,10 +390,19 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                 gui_settings = self.create_settings_dict()
                                 self.label_r.setText(f"{qq + 1} of")
                                 if Nt>=2:
-                                    self.microscope.move_stage(t=self.stack_settings.dt,
+                                    self.microscope.move_stage(r=self.stack_settings.dr,
                                                                move_type="Relative")
                                 file_name = '%06d_'%counter + sample_name + '_' + \
                                             utils.current_timestamp() + '.tif'
+
+                                """update the autocontrast setting for stack"""
+                                gui_settings["imaging"]["autocontrast"] = self.checkBox_autocontrast_stack.isChecked()
+                                #elf.microscope.autocontrast(quadrant=gui_settings["imaging"]["quadrant"])
+
+                                """correct stage rotation with scan rotation for image alignment"""
+                                if self.checkBox_scan_rotation_correction.isChecked():
+                                    self.microscope.set_scan_rotation(rotation_angle=self.stack_settings.dr,
+                                                                      type="Relative")
 
                                 image = self.microscope.acquire_image(gui_settings=gui_settings)
                                 utils.save_image(image, path=self.stack_dir, file_name=file_name)
@@ -418,6 +425,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_abort_stack_collection.setEnabled(False)
 
 
+    def _abort_clicked(self):
+        print('------------ abort clicked --------------')
+        self.pushButton_abort_stack_collection.setEnabled(False)
+        self._abort_clicked_status = True
 
 
 
@@ -482,16 +493,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.doubleSpinBox_stage_x.setValue(coords[0])
         self.doubleSpinBox_stage_y.setValue(coords[1])
         self.doubleSpinBox_stage_z.setValue(coords[2])
-        self.doubleSpinBox_stage_t.setValue(np.rad2deg(coords[3]))
-        self.doubleSpinBox_stage_r.setValue(np.rad2deg(coords[4]))
+        self.doubleSpinBox_stage_t.setValue(coords[3])
+        self.doubleSpinBox_stage_r.setValue(coords[4])
 
 
-
-
-    def _abort_clicked(self):
-        print('------------ abort clicked --------------')
-        self.pushButton_abort_stack_collection.setEnabled(False)
-        self._abort_clicked_status = True
 
 
     def disconnect(self):
