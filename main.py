@@ -20,11 +20,7 @@ from matplotlib.backends.backend_qt5agg import (
 )
 
 import utils
-
-
-class BeamType(Enum):
-    ION = 'ION'
-    ELECTRON = 'ELECTRON'
+from utils import BeamType
 
 @dataclass
 class StackSettings:
@@ -327,9 +323,11 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_acquire.setEnabled(False)
         self.pushButton_abort_stack_collection.setEnabled(True)
 
+
         """Store the current microscope state, including the current position"""
-        self.microscope._store_current_microscope_state()
-        print(self.microscope.stored_state)
+        stored_microscope_state = self.microscope._get_current_microscope_state()
+        print(stored_microscope_state)
+
 
         """Create directory for saving the stack"""
         if self.DIR:
@@ -339,7 +337,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         if not os.path.isdir(self.stack_dir):
             os.mkdir(self.stack_dir)
 
-        self.label_messages.setText(f"stack sve dir {self.stack_dir}")
+
+        self.label_messages.setText(f"stack save dir {self.stack_dir}")
 
         ranges = [self.stack_settings.x_range, self.stack_settings.y_range, self.stack_settings.z_range,
                   self.stack_settings.t_range, self.stack_settings.r_range]
@@ -350,24 +349,31 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         Nx, Ny, Nz, Nt, Nr = self.stack_settings.Nx, self.stack_settings.Ny, self.stack_settings.Nz, \
                              self.stack_settings.Nt, self.stack_settings.Nr
 
-        """initial stage coordinates"""
-        x0 = self.microscope.stored_state.x
-        y0 = self.microscope.stored_state.y
-        z0 = self.microscope.stored_state.z
-        t0 = self.microscope.stored_state.t
-        r0 = self.microscope.stored_state.r
-        scan_rot0 = self.microscope.stored_state.scan_rotation_angle
+
+        """ create pandas dataframe for collected data and metadata
+            use microscope state to populate the dictionary
+            use the same keys to access the dictionary in MicroscopeState.__to__dict__() 
+        """
+        keys = ('x', 'y', 'z', 't', 'r',
+                'horizontal_field_width', 'scan_rotation_angle',
+                'brightness', 'contrast',
+                'beam_shift_x', 'beam_shift_y')
+        self.experiment_data = {element: [] for element in keys}
+        """add other data keys"""
+        self.experiment_data['file_name'] = []
+        self.experiment_data['timestamp'] = []
+
 
         """move to the position from where to start the long scan
            move negative x,y,z by half-range (range = 2*x_range etc)
            do not move the tilt or stage rotation, the current position are the start point
         """
         if Nx >= 3:
-            self.microscope.move_stage(x=-self.stack_settings.x_range, move_type="Relative")
+            self.microscope.move_stage(x = -1*self.stack_settings.x_range, move_type="Relative")
         if Ny >= 3:
-            self.microscope.move_stage(y=-self.stack_settings.y_range, move_type="Relative")
+            self.microscope.move_stage(y = -1*self.stack_settings.y_range, move_type="Relative")
         if Nz >= 3:
-            self.microscope.move_stage(z=-self.stack_settings.z_range, move_type="Relative")
+            self.microscope.move_stage(z = -1*self.stack_settings.z_range, move_type="Relative")
 
         def _run_loop():
             counter = 0
@@ -394,8 +400,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                 if Nt>=2:
                                     self.microscope.move_stage(r=self.stack_settings.dr,
                                                                move_type="Relative")
-                                file_name = '%06d_'%counter + sample_name + '_' + \
-                                            utils.current_timestamp() + '.tif'
 
                                 """update the autocontrast setting for stack"""
                                 gui_settings["imaging"]["autocontrast"] = self.checkBox_autocontrast_stack.isChecked()
@@ -406,12 +410,25 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                     self.microscope.set_scan_rotation(rotation_angle=self.stack_settings.dr,
                                                                       type="Relative")
 
+                                self.microscope._get_current_microscope_state()
+
+                                file_name = '%06d_'%counter + sample_name + '_' + \
+                                            utils.current_timestamp() + '.tif'
                                 image = self.microscope.acquire_image(gui_settings=gui_settings)
                                 utils.save_image(image, path=self.stack_dir, file_name=file_name)
                                 self.update_display(image=image)
 
+                                self.experiment_data = utils.populate_experiment_data_frame(
+                                    data_frame=self.experiment_data,
+                                    microscope_state=self.microscope.microscope_state,
+                                    file_name=file_name,
+                                    timestamp=utils.current_timestamp(),
+                                    keys=keys
+                                )
+
                                 self.repaint()  # update the GUI to show the progress
                                 QtWidgets.QApplication.processEvents()
+
 
                                 if self._abort_clicked_status == True:
                                     print('Abort clicked')
@@ -426,8 +443,14 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_acquire.setEnabled(True)
         self.pushButton_abort_stack_collection.setEnabled(False)
 
-        print('End of long scan, returning to the stored microoscope state', self.microscope.stored_state)
-        self.microscope._restore_microscope_state(state=self.microscope.stored_state)
+        print('End of long scan, returning to the stored microscope state', stored_microscope_state)
+        self.microscope._restore_microscope_state(state=stored_microscope_state)
+        print('dataframe')
+        print(self.experiment_data)
+        utils.save_data_frame(data_frame=self.experiment_data,
+                              path=self.stack_dir,
+                              file_name='summary')
+
 
 
     def _abort_clicked(self):

@@ -78,7 +78,9 @@ def move_relative(microscope,
     """
     try:
         stage = microscope.specimen.stage
-        stage_settings = MoveSettings(rotate_compucentric=True)
+        stage_settings = MoveSettings(rotate_compucentric=True,
+                                      tilt_compucentric=True
+                                      )
         new_stage_position = StagePosition(x=dx, y=dy, z=dz,
                                            t=dt, r=dr)
         stage.relative_move(new_stage_position, stage_settings)
@@ -107,8 +109,9 @@ def move_absolute(microscope,
     """
     try:
         stage = microscope.specimen.stage
-        stage_settings = MoveSettings(rotate_compucentric=True)
-
+        stage_settings = MoveSettings(rotate_compucentric=True,
+                                      tilt_compucentric=True
+                                      )
         """First rotate, then move x,y,z and then tilt"""
         """1. Rotate"""
         stage.absolute_move(

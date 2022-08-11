@@ -5,7 +5,8 @@ try:
     from autoscript_sdb_microscope_client.structures import (AdornedImage,
                                                              GrabFrameSettings,
                                                              Rectangle,
-                                                             RunAutoCbSettings)
+                                                             RunAutoCbSettings,
+                                                             Point)
 except:
     print('Autoscript module not found')
 
@@ -13,77 +14,16 @@ import numpy as np
 from dataclasses import dataclass
 import movement
 import utils
+from utils import MicroscopeState
+from utils import ImageSettings
+from importlib import reload  # Python 3.4+
 
-#from main import BeamType
+
 from enum import Enum
 class BeamType(Enum):
     ION = 'ION'
     ELECTRON = 'ELECTRON'
 
-@dataclass
-class MicroscopeState:
-    hv : float = 20
-    beam_current : float = 0
-    x : float = 0
-    y : float = 0
-    z : float = 0
-    t : float = 0
-    r : float = 0
-    horizontal_field_width : float = 0
-    resolution : str = '768x512'
-    detector : str = 'ETD'
-    rotate_compucentric : bool = True
-    scan_rotation_angle : float = 0
-    brighness : float = 0
-    contrast : float = 0
-
-    def __to__dict__(self) -> dict:
-        state_dict = {
-            "x" : self.x,
-            "y" : self.y,
-            "z" : self.z,
-            "r" : self.r,
-            "t" : self.t,
-            "rotate_compucentric" : self.rotate_compucentric,
-            "horizontal_field_width" : self.horizontal_field_width,
-            "detector" : self.detector,
-            "scan_rotation_angle" : self.scan_rotation_angle,
-            "brighness" : self.brighness,
-            "contrast" : self.contrast
-        }
-        return state_dict
-
-    def get_stage_position(self):
-        coords_dict = {
-            "x" : self.x,
-            "y" : self.y,
-            "z" : self.z,
-            "r" : self.r,
-            "t" : self.t,
-            "rotate_compucentric" : self.rotate_compucentric
-        }
-        return coords_dict
-
-    def update_stage_position(self, x=0, y=0, z=0, r=0, t=0):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.r = r
-        self.t = t
-
-
-@dataclass
-class ImageSettings:
-    resolution: str
-    dwell_time: float
-    horizontal_field_width: float
-    autocontrast: bool
-    beam_type: BeamType
-    save: bool
-    sample_name: str
-    path : str
-    quadrant: int
-    bit_depth: int
 
 
 class Microscope():
@@ -94,7 +34,6 @@ class Microscope():
         self.ip_address = ip_address
         self.log_path = log_path
         self.microscope_state = MicroscopeState()
-        self.stored_state = MicroscopeState()
 
         print('image settings: ', self.settings)
 
@@ -104,7 +43,7 @@ class Microscope():
         except:
             print('Autoscript not installed on the computer, using demo mode')
             self.demo = True
-            self.microscope = ['no autoscript found']
+            self.microscope = ['no Autoscript found']
 
 
     def establish_connection(self):
@@ -162,7 +101,7 @@ class Microscope():
                     self.autocontrast(quadrant=settings.quadrant)
 
                 grab_frame_settings = GrabFrameSettings(resolution=settings.resolution,
-                                                        dwell_time=settings.dwell_time * 1e-6,
+                                                        dwell_time=settings.dwell_time,
                                                         bit_depth=settings.bit_depth
                                                         )
                 image = self.microscope.imaging.grab_frame(grab_frame_settings)
@@ -287,37 +226,40 @@ class Microscope():
 
 
 
-    def _store_current_microscope_state(self):
+    def _get_current_microscope_state(self) -> MicroscopeState:
         """Acquires the current microscope state to store if necessary to return to this initial state
-         Stores the state in MicroscopeState dataclass variable
+         Returns the state in MicroscopeState dataclass variable
         Args:
             None
         Returns
         -------
-        None
+        MicroscopeState
         """
         try:
             position = self.update_stage_position()
-            self.stored_state.x = position.x
-            self.stored_state.y = position.y
-            self.stored_state.z = position.z
-            self.stored_state.t = position.t
-            self.stored_state.r = position.r
-            self.stored_state.horizontal_field_width = \
+            self.microscope_state.x = position.x
+            self.microscope_state.y = position.y
+            self.microscope_state.z = position.z
+            self.microscope_state.t = position.t
+            self.microscope_state.r = position.r
+            self.microscope_state.horizontal_field_width = \
                 self.microscope.beams.electron_beam.horizontal_field_width.value
-            self.stored_state.resolution = self.microscope.beams.electron_beam.scanning.resolution
-            self.stored_state.hv = self.microscope.beams.electron_beam.high_voltage.value
-            self.stored_state.scan_rotation_angle = \
+            self.microscope_state.resolution = self.microscope.beams.electron_beam.scanning.resolution
+            self.microscope_state.hv = self.microscope.beams.electron_beam.high_voltage.value
+            self.microscope_state.scan_rotation_angle = \
                 self.microscope.beams.electron_beam.scanning.rotation.value
-            self.stored_state.brightness = self.microscope.detector.brightness.value
-            self.stored_state.contrast = self.microscope.detector.contrast.value
+            self.microscope_state.brightness = self.microscope.detector.brightness.value
+            self.microscope_state.contrast = self.microscope.detector.contrast.value
+            beam_shift = self.microscope.beams.electron_beam.beam_shift.value # returns Point()
+            self.microscope_state.beam_shift_x = beam_shift.x
+            self.microscope_state.beam_shift_y = beam_shift.y
         except:
-            self.stored_state.x = 2
-            self.stored_state.y = 1
-            self.stored_state.z = 0
-            self.stored_state.t = 0
-            self.stored_state.r = 0
-            self.stored_state.scan_rotation_angle = 0
+            self.microscope_state.x = 2
+            self.microscope_state.y = 1
+            self.microscope_state.z = 0
+            self.microscope_state.t = 0
+            self.microscope_state.r = 0
+            self.microscope_state.scan_rotation_angle = 0
 
 
     def _restore_microscope_state(self, state : MicroscopeState):
@@ -334,8 +276,8 @@ class Microscope():
             """move function take x,y,z in micrometres and r,t in degrees
             the stored values are straight from the microscope in metres and rad
             """
-            self.move_stage(x=state.x/1e-6, y=state.y/1e-6, z=state.z/1e-6,
-                            t=np.rad2deg(state.t), r=np.rad2deg(state.r),
+            self.move_stage(x=state.x, y=state.y, z=state.z,
+                            t=state.t, r=state.r,
                             move_type='Absolute')
             self.microscope.beams.electron_beam.horizontal_field_width.value = \
                 state.horizontal_field_width # no need of conversion, the state value from the machine
@@ -344,6 +286,8 @@ class Microscope():
                 state.scan_rotation_angle # no need of conversion, the state value from the machine
             self.microscope.detector.brightness.value = state.brighness
             self.microscope.detector.contrast.value = state.contrast
+            self.microscope.beams.electron_beam.beam_shift.value = Point(state.beam_shift_x,
+                                                                         state.beam_shift_y)
         except:
             print('Could not restore the microscope state')
 
@@ -475,7 +419,7 @@ if __name__ == '__main__':
     image_settings = microscope.update_image_settings(gui_settings=gui_settings)
     print(image_settings)
 
-    microscope._store_current_microscope_state()
+    microscope._get_current_microscope_state()
 
 
 
