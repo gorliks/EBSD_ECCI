@@ -227,7 +227,8 @@ class Microscope():
 
 
     def _get_current_microscope_state(self) -> MicroscopeState:
-        """Acquires the current microscope state to store if necessary to return to this initial state
+        """Acquires the current microscope state to store
+         if necessary it is possible to return to this stored state later
          Returns the state in MicroscopeState dataclass variable
         Args:
             None
@@ -260,6 +261,7 @@ class Microscope():
             self.microscope_state.t = 0
             self.microscope_state.r = 0
             self.microscope_state.scan_rotation_angle = 0
+        return self.microscope_state
 
 
     def _restore_microscope_state(self, state : MicroscopeState):

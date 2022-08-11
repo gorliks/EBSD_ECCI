@@ -320,7 +320,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         gui_settings = self.create_settings_dict()
         timestamp = utils.current_timestamp()
         sample_name = self.plainTextEdit_sample_name.toPlainText()
+
         self.pushButton_acquire.setEnabled(False)
+        self.pushButton_collect_stack.setEnabled(False)
+        self.pushButton_estimate_stack_time.setEnabled(False)
         self.pushButton_abort_stack_collection.setEnabled(True)
 
 
@@ -337,15 +340,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         if not os.path.isdir(self.stack_dir):
             os.mkdir(self.stack_dir)
 
-
         self.label_messages.setText(f"stack save dir {self.stack_dir}")
 
-        ranges = [self.stack_settings.x_range, self.stack_settings.y_range, self.stack_settings.z_range,
-                  self.stack_settings.t_range, self.stack_settings.r_range]
-        deltas = [self.stack_settings.dx, self.stack_settings.dy, self.stack_settings.dz,
-                  self.stack_settings.dt, self.stack_settings.dr]
-        NN = [self.stack_settings.Nx, self.stack_settings.Ny, self.stack_settings.Nz,
-              self.stack_settings.Nt, self.stack_settings.Nr]
         Nx, Ny, Nz, Nt, Nr = self.stack_settings.Nx, self.stack_settings.Ny, self.stack_settings.Nz, \
                              self.stack_settings.Nt, self.stack_settings.Nr
 
@@ -437,19 +433,21 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
                                 counter += 1
                                 print(f'sleeping for {self.gui_settings["imaging"]["dwell_time"]}')
-                                time.sleep(self.gui_settings["imaging"]["dwell_time"])
+                                time.sleep(self.gui_settings["imaging"]["dwell_time"]/1e-6)
 
         _run_loop()
         self.pushButton_acquire.setEnabled(True)
+        self.pushButton_collect_stack.setEnabled(True)
+        self.pushButton_estimate_stack_time.setEnabled(True)
         self.pushButton_abort_stack_collection.setEnabled(False)
 
         print('End of long scan, returning to the stored microscope state', stored_microscope_state)
-        self.microscope._restore_microscope_state(state=stored_microscope_state)
-        print('dataframe')
-        print(self.experiment_data)
         utils.save_data_frame(data_frame=self.experiment_data,
                               path=self.stack_dir,
-                              file_name='summary')
+                              file_name='summary'
+                              )
+        self.microscope._restore_microscope_state(state=stored_microscope_state)
+
 
 
 
