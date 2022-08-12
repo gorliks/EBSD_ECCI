@@ -172,7 +172,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         quadrant = int(self.comboBox_quadrant.currentText())
         image = \
             self.microscope.last_image(quadrant=quadrant)
-        self.update_display(image=iÂage)
+        self.update_display(image=image)
 
     def update_stage_position(self):
         self.comboBox_move_type.setCurrentText("Absolute")
