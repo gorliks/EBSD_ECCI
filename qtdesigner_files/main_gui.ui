@@ -99,7 +99,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -2689,6 +2689,19 @@
         <string>×</string>
        </property>
       </widget>
+      <widget class="QPushButton" name="pushButton_correlation">
+       <property name="geometry">
+        <rect>
+         <x>430</x>
+         <y>580</y>
+         <width>93</width>
+         <height>28</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>correlation</string>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -2699,7 +2712,7 @@
      <x>0</x>
      <y>0</y>
      <width>1268</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

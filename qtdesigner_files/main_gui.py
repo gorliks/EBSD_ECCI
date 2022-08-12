@@ -801,10 +801,13 @@ class Ui_MainWindow(object):
         font.setPointSize(12)
         self.label_7.setFont(font)
         self.label_7.setObjectName("label_7")
+        self.pushButton_correlation = QtWidgets.QPushButton(self.frame)
+        self.pushButton_correlation.setGeometry(QtCore.QRect(430, 580, 93, 28))
+        self.pushButton_correlation.setObjectName("pushButton_correlation")
         self.horizontalLayout.addWidget(self.frame)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1268, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1268, 26))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -828,7 +831,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -964,6 +967,7 @@ class Ui_MainWindow(object):
         self.comboBox_image_convention.setItemText(2, _translate("MainWindow", "TEM convention"))
         self.label_34.setText(_translate("MainWindow", "selected point"))
         self.label_7.setText(_translate("MainWindow", "×"))
+        self.pushButton_correlation.setText(_translate("MainWindow", "correlation"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.actionOpen.setText(_translate("MainWindow", "Open"))
         self.actionSave.setText(_translate("MainWindow", "Save"))
