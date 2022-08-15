@@ -104,8 +104,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def test_correlation(self):
-        #image_1 = "01_tilted.tif"
-        image_1 = "02_flat_shifted.tif"
+        image_1 = "01_tilted.tif"
+        #image_1 = "02_flat_shifted.tif"
         image_2 = "02_flat.tif"
 
         window = correlation.open_correlation_window(
@@ -117,7 +117,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def correlation_complete(self, window):
         result = window.menu_quit()
-        print("Correlation complete, message from menu_quit ", result.shape)
+        print("Correlation complete, overlayed image dims = ", result.shape)
         self.update_display(image=result)
 
 

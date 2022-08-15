@@ -184,7 +184,9 @@ class _CorrelationWindow(QMainWindow):
 
         # TODO: correlation fix
         # result, overlay_adorned_image, fluorescence_image_rgb, fluorescence_original = correlate_images(img1, img2, output, matched_points_dict)
-        result = correlate_images(src_image=image1, target_image=image2, output_path=None,
+        # result = correlate_images(src_image=image1, target_image=image2, output_path=None,
+        #                           matched_points_dict=matched_points_dict, save=False)
+        result = correlate_images_projective(src_image=image1, target_image=image2, output_path=None,
                                   matched_points_dict=matched_points_dict, save=False)
         self.close()
         return result
@@ -540,6 +542,26 @@ def correlate_images(src_image, target_image, output_path, matched_points_dict, 
     return result
 
 
+def correlate_images_projective(src_image, target_image, output_path, matched_points_dict, save=False):
+
+    if matched_points_dict == []:
+        print('No control points selected, exiting.')
+        return
+
+    src, dst = point_coords(matched_points_dict)
+    transformation = calculate_transform_projective(src, dst)
+    src_image_aligned = apply_transform_projective(src_image, transformation)
+    result = overlay_images(src_image_aligned, target_image)
+    result = skimage.util.img_as_ubyte(result)
+
+    # plt.imsave(output_path, result)
+    if save:
+        pass
+        #save result image in
+
+    return result
+
+
 
 def point_coords(matched_points_dict):
     """Create source & destination coordinate numpy arrays from cpselect dict.
@@ -625,6 +647,34 @@ def apply_transform(image, transformation, inverse=True, multichannel=True):
     # move channel axis to the front for easier iteration over array
     image = np.moveaxis(image, -1, 0)
     warped_img = np.array([ndi.affine_transform((img_channel), transformation)
+                           for img_channel in image])
+    warped_img = np.moveaxis(warped_img, 0, -1)
+
+    return warped_img
+
+
+
+def calculate_transform_projective(src, dst):
+    src = np.flip(src, axis=1)
+    dst = np.flip(dst, axis=1)
+    tform = skimage.transform.ProjectiveTransform()
+    tform.estimate(src, dst)
+    return tform.inverse
+
+
+def apply_transform_projective(image, transformation, multichannel=True):
+
+    if not multichannel:
+        if image.ndim == 2:
+            image = skimage.color.gray2rgb(image)
+        elif image.ndim != transformation.shape[0] - 1:
+            raise ValueError('Unexpected number of image dimensions for the '
+                             'input transformation. Did you need to use: '
+                             'multichannel=True ?')
+
+    # move channel axis to the front for easier iteration over array
+    image = np.moveaxis(image, -1, 0)
+    warped_img = np.array([skimage.transform.warp((img_channel), transformation)
                            for img_channel in image])
     warped_img = np.moveaxis(warped_img, 0, -1)
 
@@ -817,6 +867,64 @@ if __name__ == '__main__':
     image1 = load_image("01_tilted.tif")
     image2 = load_image("02_flat.tif")
     wp = _WidgetPlot()
+
+    image1 = skimage.color.gray2rgb(image1)
+    image2 = skimage.color.gray2rgb(image2)
+    image1 = skimage.transform.resize(image1, image2.shape)
+
+    src = [[ 445.28349348,  713.83713241],
+           [ 330.83521061,  713.83713241],
+           [ 414.21895956,  860.98492467],
+           [ 523.76231602,  775.96620025],
+           [ 442.01354254,  975.43320754],
+           [ 482.88792928,  844.63516997],
+           [ 476.3480274,  1425.05146167],
+           [ 293.23077481,  849.54009638]]
+
+    dst = [[ 507.41256133,  727.96926583],
+           [ 296.50072575,  723.06433942],
+           [ 448.55344442,  878.38700903],
+           [ 646.38547624,  788.4633582 ],
+           [ 507.41256133,  984.66041455],
+           [ 572.81158011,  857.13232792],
+           [ 579.35148199, 1409.75403664],
+           [ 229.4667315,   868.57715621]]
+
+    src = np.array(src)
+    dst = np.array(dst)
+
+    src = np.flip(src, axis=1)
+    dst = np.flip(dst, axis=1)
+
+    tform = calculate_transform_projective(src, dst)
+    print(tform)
+
+    image1_aligned = apply_transform_projective(image1, tform.inverse)
+
+    overlay = overlay_images(image1_aligned, image2)
+
+
+
+    plt.figure()
+    plt.subplot(2, 2, 1)
+    plt.imshow(image1, cmap='gray')
+    [plt.scatter(point[0],point[1]) for point in src]
+    plt.title('image_1')
+
+    plt.subplot(2, 2, 2)
+    plt.imshow(image2, cmap='gray')
+    [plt.scatter(point[0],point[1]) for point in dst]
+    plt.title('image_2')
+
+    plt.subplot(2, 2, 3)
+    plt.imshow(image1_aligned, cmap='gray')
+    plt.title('image_1 aligned')
+
+    plt.subplot(2, 2, 4)
+    plt.imshow(overlay, cmap='gray')
+    plt.title('overlay')
+
+    plt.show()
 
 
     if 0:
