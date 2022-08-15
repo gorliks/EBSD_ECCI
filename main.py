@@ -104,7 +104,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def test_correlation(self):
-        image_1 = "01_tilted.tif"
+        #image_1 = "01_tilted.tif"
+        image_1 = "02_flat_shifted.tif"
         image_2 = "02_flat.tif"
 
         window = correlation.open_correlation_window(
@@ -112,11 +113,13 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         )
         window.showMaximized()
         window.show()
-        #window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
+        window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
 
     def correlation_complete(self, window):
-        resut = window.menu_quit()
-        print("Correlation complete, message from menu_quit ", resut)
+        result = window.menu_quit()
+        print("Correlation complete, message from menu_quit ", result.shape)
+        self.update_display(image=result)
+
 
 
     def create_settings_dict(self) -> dict:

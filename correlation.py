@@ -73,10 +73,10 @@ class _CorrelationWindow(QMainWindow):
         self.wp.canvas.fig.subplots_adjust(
             left=0.01, bottom=0.01, right=0.99, top=0.99) # widget
 
-        # q1 = QTimer(self)
-        # q1.setSingleShot(False)
-        # q1.timeout.connect(self.updateGUI)
-        # q1.start(10000)
+        q1 = QTimer(self)
+        q1.setSingleShot(False)
+        q1.timeout.connect(self.updateGUI)
+        q1.start(10000)
 
     def create_window(self):
         self.setWindowTitle("Control Point Selection Tool")
@@ -176,12 +176,17 @@ class _CorrelationWindow(QMainWindow):
 
 
     def menu_quit(self):
+
         matched_points_dict = self.get_dictlist()
+        src, dst = point_coords(matched_points_dict)
+        print(src)
+        print(dst)
+
         # TODO: correlation fix
         # result, overlay_adorned_image, fluorescence_image_rgb, fluorescence_original = correlate_images(img1, img2, output, matched_points_dict)
-        result = 'Quit Menu' #correlate_images(img1, img2, output, matched_points_dict)
+        result = correlate_images(src_image=image1, target_image=image2, output_path=None,
+                                  matched_points_dict=matched_points_dict, save=False)
         self.close()
-        # return result, overlay_adorned_image, fluorescence_image_rgb, fluorescence_original, output, matched_points_dict
         return result
 
 
@@ -501,6 +506,38 @@ class _ControlPoint:
         return dict
 
 
+
+
+
+def correlate_images(src_image, target_image, output_path, matched_points_dict, save=False):
+    """Correlates two images using points chosen by the user
+    Parameters
+    ----------
+    fluorescence_image_rgb :
+        numpy array with shape (cols, rows, channels)
+    fibsem_image : AdornedImage.
+        Expecting .data attribute of shape (cols, rows, channels)
+    output : str
+        Path to save location
+    matched_points_dict : dict
+    Dictionary of points selected in the correlation window
+    """
+    if matched_points_dict == []:
+        print('No control points selected, exiting.')
+        return
+
+    src, dst = point_coords(matched_points_dict)
+    transformation = calculate_transform(src, dst)
+    src_image_aligned = apply_transform(src_image, transformation)
+    result = overlay_images(src_image_aligned, target_image)
+    result = skimage.util.img_as_ubyte(result)
+
+    # plt.imsave(output_path, result)
+    if save:
+        pass
+        #save result image in
+
+    return result
 
 
 

@@ -2694,12 +2694,12 @@
         <rect>
          <x>430</x>
          <y>580</y>
-         <width>93</width>
+         <width>101</width>
          <height>28</height>
         </rect>
        </property>
        <property name="text">
-        <string>correlation</string>
+        <string>correlation test</string>
        </property>
       </widget>
      </widget>
