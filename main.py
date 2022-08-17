@@ -105,8 +105,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def test_correlation(self):
         image_1 = "01_tilted.tif"
-        #image_1 = "02_flat_shifted.tif"
-        image_2 = "02_flat.tif"
+        image_2 = "02_flat_shifted.tif"
+        #image_2 = "02_flat.tif"
 
         window = correlation.open_correlation_window(
             self, image_1, image_2, output_path=None

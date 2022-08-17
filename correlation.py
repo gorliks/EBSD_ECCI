@@ -15,6 +15,11 @@ import skimage.io
 import skimage.transform
 import skimage.color
 
+# sub-pixel cross-correrlation precision
+from skimage.registration import phase_cross_correlation
+from skimage.registration._phase_cross_correlation import _upsampled_dft
+from scipy.ndimage import fourier_shift
+
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -25,6 +30,12 @@ from matplotlib.backends.backend_qt5agg import \
     NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from skimage.transform import AffineTransform
+
+
+
+
+
+
 
 
 
@@ -663,7 +674,6 @@ def calculate_transform_projective(src, dst):
 
 
 def apply_transform_projective(image, transformation, multichannel=True):
-
     if not multichannel:
         if image.ndim == 2:
             image = skimage.color.gray2rgb(image)
@@ -844,11 +854,30 @@ def shift_from_crosscorrelation_simple_images(img1, img2, low_pass=256, high_pas
     maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
     print('\n', maxX, maxY)
     cen = np.asarray(xcorr.shape) / 2
-    print('centre = ', cen)
     err = np.array(cen - [maxX, maxY], int)
+    print('centre = ', cen)
     print("Shift between 1 and 2 is = " + str(err))
     print("img2 is X-shifted by ", err[1], '; Y-shifted by ', err[0])
     return err[1], err[0]
+
+
+
+
+def subpixel_shift_from_crosscorrelation(ref_image, offset_image, upsample_factor=100):
+    # pixel precision
+    shift, error, diffphase = phase_cross_correlation(ref_image, offset_image)
+    image_product = np.fft.fft2(ref_image) * np.fft.fft2(offset_image).conj()
+    cc_image = np.fft.fftshift(np.fft.ifft2(image_product))
+    cc_image = cc_image.real
+    print(f'Detected pixel offset (y, x): {shift}')
+
+    # subpixel precision
+    shift, error, diffphase = phase_cross_correlation(ref_image, offset_image,
+                                                      upsample_factor=upsample_factor)
+    print(f'Detected subpixel offset (y, x): {shift}')
+    offset_image_aligned = scipy.ndimage.shift(offset_image, shift,
+                                               output=None, order=3, mode='constant', cval=0.0, prefilter=True)
+    return shift, offset_image_aligned
 
 
 
@@ -862,125 +891,172 @@ def load_image(file_path):
 
 
 if __name__ == '__main__':
-    global image1
-    global image2
     image1 = load_image("01_tilted.tif")
-    image2 = load_image("02_flat.tif")
-    wp = _WidgetPlot()
+    #image2 = load_image("02_flat.tif")
+    #image3 = load_image("02_flat_shifted.tif")
 
-    image1 = skimage.color.gray2rgb(image1)
-    image2 = skimage.color.gray2rgb(image2)
-    image1 = skimage.transform.resize(image1, image2.shape)
-
-    src = [[ 445.28349348,  713.83713241],
-           [ 330.83521061,  713.83713241],
-           [ 414.21895956,  860.98492467],
-           [ 523.76231602,  775.96620025],
-           [ 442.01354254,  975.43320754],
-           [ 482.88792928,  844.63516997],
-           [ 476.3480274,  1425.05146167],
-           [ 293.23077481,  849.54009638]]
-
-    dst = [[ 507.41256133,  727.96926583],
-           [ 296.50072575,  723.06433942],
-           [ 448.55344442,  878.38700903],
-           [ 646.38547624,  788.4633582 ],
-           [ 507.41256133,  984.66041455],
-           [ 572.81158011,  857.13232792],
-           [ 579.35148199, 1409.75403664],
-           [ 229.4667315,   868.57715621]]
-
-    src = np.array(src)
-    dst = np.array(dst)
-
-    src = np.flip(src, axis=1)
-    dst = np.flip(dst, axis=1)
-
-    tform = calculate_transform_projective(src, dst)
-    print(tform)
-
-    image1_aligned = apply_transform_projective(image1, tform.inverse)
-
-    overlay = overlay_images(image1_aligned, image2)
-
-
-
-    plt.figure()
-    plt.subplot(2, 2, 1)
-    plt.imshow(image1, cmap='gray')
-    [plt.scatter(point[0],point[1]) for point in src]
-    plt.title('image_1')
-
-    plt.subplot(2, 2, 2)
-    plt.imshow(image2, cmap='gray')
-    [plt.scatter(point[0],point[1]) for point in dst]
-    plt.title('image_2')
-
-    plt.subplot(2, 2, 3)
-    plt.imshow(image1_aligned, cmap='gray')
-    plt.title('image_1 aligned')
-
-    plt.subplot(2, 2, 4)
-    plt.imshow(overlay, cmap='gray')
-    plt.title('overlay')
-
-    plt.show()
 
 
     if 0:
-        image_1 = load_image("01_tilted.tif")
-        image_2 = load_image("02_flat.tif")
-        image_3 = load_image("02_flat_shifted.tif")
+        image1 = skimage.color.gray2rgb(image1)
+        image2 = skimage.color.gray2rgb(image2)
+        image1 = skimage.transform.resize(image1, image2.shape)
 
-        image_1 = normalise(image_1)
-        image_2 = normalise(image_2)
-        image_3 = normalise(image_3)
+        src = [[ 445.28349348,  713.83713241],
+               [ 330.83521061,  713.83713241],
+               [ 414.21895956,  860.98492467],
+               [ 523.76231602,  775.96620025],
+               [ 442.01354254,  975.43320754],
+               [ 482.88792928,  844.63516997],
+               [ 476.3480274,  1425.05146167],
+               [ 293.23077481,  849.54009638]]
 
-        lowpass_pixels = int(max(image_1.data.shape) / 12)  # =128 @ 1536x1024, good for e-beam images
-        highpass_pixels = int(max(image_1.data.shape) / 256)  # =6   @ 1536x1024, good for e-beam images
-        sigma = int(2 * max(image_1.data.shape) / 1536)  # =2   @ 1536x1024, good for e-beam images
+        dst = [[ 507.41256133,  727.96926583],
+               [ 296.50072575,  723.06433942],
+               [ 448.55344442,  878.38700903],
+               [ 646.38547624,  788.4633582 ],
+               [ 507.41256133,  984.66041455],
+               [ 572.81158011,  857.13232792],
+               [ 579.35148199, 1409.75403664],
+               [ 229.4667315,   868.57715621]]
 
-        bandpass = bandpass_mask(image_1.shape, low_pass=100, high_pass=10, sigma=5)
-        xcorr = crosscorrelation(image_1, image_2, filter="yes",
-                                 low_pass=500,
-                                 high_pass=20,
-                                 sigma=3)
-        maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
+        src = np.array(src)
+        dst = np.array(dst)
 
-        dy, dx = shift_from_crosscorrelation_simple_images(image_2, image_3,
-                                                           low_pass=lowpass_pixels,
-                                                           high_pass=highpass_pixels,
-                                                           sigma=sigma)
+        src = np.flip(src, axis=1)
+        dst = np.flip(dst, axis=1)
 
-        aligned = np.copy(image_2)
-        aligned = np.roll(aligned, -int(dy), axis=0)
-        aligned = np.roll(aligned, +int(dx), axis=1)
+        tform = skimage.transform.ProjectiveTransform()
+        tform.estimate(src, dst)
+        print(tform)
+
+        image1_aligned = apply_transform_projective(image1, tform.inverse)
+
+        overlay = overlay_images(image1_aligned, image2)
 
 
-        plt.figure()
-        plt.subplot(2, 3, 1)
-        plt.imshow(image_1, cmap='gray')
+
+        # angle_x = np.deg2rad(0)
+        # angle_y = np.deg2rad(2)
+        # matrix = np.array([[-0.5, 0, 0],
+        #                   [0, -0.5, 0],
+        #                   [0, 0, 1]
+        #                    ])
+        # tform2 = skimage.transform.ProjectiveTransform(matrix=matrix)
+        # print(tform2)
+        # warped_image = skimage.transform.warp(image1, tform2.inverse)
+
+
+
+
+        def rotate_about_x(points, angle):
+            angle = np.deg2rad(angle)
+            # matrix = np.array([
+            #     [1 , 0 , 0],
+            #     [0 , np.cos(angle) , -np.sin(angle)],
+            #     [0 , np.sin(angle) , np.cos(angle)]
+            # ])
+            matrix = np.array([
+                [np.cos(angle) , 0 , np.sin(angle)],
+                [0 , 1 , 0],
+                [-np.sin(angle) , 0 , np.cos(angle)]
+            ])
+            points = np.array(points)
+            centre  = np.asarray((1024,1536)) / 2
+            points = points - centre
+            points_rot = np.zeros( (points.shape[0], points.shape[1]+1) )
+            points_rot = [[point[0],point[1],0] for point in points]
+            points_rot = [ np.dot(matrix,point) for point in points_rot ]
+            points_rot = np.array(points_rot)
+
+            centre = np.asarray((1024, 1536,0)) / 2
+            points_rot += centre
+            return points_rot
+
+        def project_3d_point_to_xy(points):
+            points_2d = np.zeros((points.shape[0], points.shape[1] - 1))
+            points_2d = [[point[0], point[1]] for point in points]
+            points_2d = np.array(points_2d)
+            return points_2d
+
+        points_on_flat_surface = np.array([
+            [0, 0],
+            [0, 256],
+            [0, 768],
+            [0, 1536],
+            [256, 0],
+            [256, 256],
+            [256, 512],
+            [256, 1024],
+            [256, 1536],
+            [512, 0],
+            [512, 256],
+            [512, 512],
+            [512, 1024],
+            [768, 0],
+            [768, 256],
+            [768, 512],
+            [768, 768],
+            [768, 1024],
+            [1024, 0],
+            [1024, 256],
+            [1024, 512],
+            [1024, 768],
+            [1024, 1024],
+            [1024, 1536]
+            ])
+
+
+        ANGLE = 27.
+        points_rotate_about_x = rotate_about_x(points_on_flat_surface, ANGLE)
+        points_rotated = project_3d_point_to_xy(points_rotate_about_x)
+
+        plt.figure(31)
+        [plt.scatter(point[0],point[1], c='b') for point in points_on_flat_surface]
+        [plt.scatter(point[0],point[1], c='r') for point in points_rotated]
+        plt.title('matrix transform')
+
+        tform2 = skimage.transform.ProjectiveTransform()
+        tform2.estimate(points_on_flat_surface, points_rotated)
+        print(tform2)
+        image1_transform = apply_transform_projective(image1, tform2.inverse)
+        ####################
+        plt.figure(32)
+        plt.subplot(3, 1, 1)
+        plt.imshow(image1, cmap='gray')
         plt.title('image_1')
-        plt.subplot(2, 3, 2)
-        plt.imshow(image_2, cmap='gray')
-        plt.title('image_2')
-        plt.subplot(2, 3, 3)
-        plt.imshow(image_3, cmap='gray')
-        plt.title('image_3')
-        plt.subplot(2, 3, 4)
-        plt.imshow(bandpass, cmap='gray')
-        plt.title('bandpass')
-        plt.subplot(2, 3, 5)
-        plt.imshow(xcorr, cmap='gray')
-        plt.scatter(maxY, maxX)
-        plt.title('xcorr')
-        plt.subplot(2, 3, 6)
-        plt.title('image 2 shifted to align with 3')
-        plt.imshow( image_2, cmap='Blues_r',   alpha=0.5)
-        plt.imshow( aligned, cmap='Oranges_r', alpha=0.5)
+        plt.subplot(3, 1, 2)
+        plt.imshow(image1_transform, cmap='gray')
+        plt.title('image_1_transform')
+        plt.subplot(3, 1, 3)
+        plt.imshow(overlay_images(image1_transform, image2), cmap='gray')
+        plt.title('overlay')
 
+
+
+        plt.figure(30)
+        plt.subplot(2, 2, 1)
+        plt.imshow(image1, cmap='gray')
+        [plt.scatter(point[0],point[1]) for point in src]
+        plt.title('image_1')
+
+        plt.subplot(2, 2, 2)
+        plt.imshow(image2, cmap='gray')
+        [plt.scatter(point[0],point[1]) for point in dst]
+        plt.title('image_2')
+
+        plt.subplot(2, 2, 3)
+        plt.imshow(image1_aligned, cmap='gray')
+        plt.title('image_1 aligned')
+
+        plt.subplot(2, 2, 4)
+        plt.imshow(overlay, cmap='gray')
+        plt.title('overlay')
 
         plt.show()
+
+
+
 
 
 
