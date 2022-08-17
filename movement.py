@@ -77,10 +77,10 @@ def move_relative(microscope,
         The units of supplied angles are radians
     """
     try:
+        """TODO !Compucentric tilt positioning option is not supported on this microscope!"""
         stage = microscope.specimen.stage
-        stage_settings = MoveSettings(rotate_compucentric=True,
-                                      tilt_compucentric=True
-                                      )
+        stage_settings = MoveSettings(rotate_compucentric=True)
+        #                              tilt_compucentric=True <-- Not supported
         new_stage_position = StagePosition(x=dx, y=dy, z=dz,
                                            t=dt, r=dr)
         stage.relative_move(new_stage_position, stage_settings)
@@ -89,8 +89,8 @@ def move_relative(microscope,
         return (position.x, position.y, position.z,
                 position.t, position.r
                 )
-    except:
-        print('movement: Could not execute movement, demo mode')
+    except Exception as e:
+        print(f'error {e}: movement rel: Could not execute movement, demo mode')
         return (5,5,5,5,5)
 
 
@@ -108,10 +108,10 @@ def move_absolute(microscope,
         The units of supplied angles are radians
     """
     try:
+        """TODO !Compucentric tilt positioning option is not supported on this microscope!"""
         stage = microscope.specimen.stage
-        stage_settings = MoveSettings(rotate_compucentric=True,
-                                      tilt_compucentric=True
-                                      )
+        stage_settings = MoveSettings(rotate_compucentric=True)
+        #                              tilt_compucentric=True <-- Not supported
         """First rotate, then move x,y,z and then tilt"""
         """1. Rotate"""
         stage.absolute_move(
@@ -134,8 +134,8 @@ def move_absolute(microscope,
         return (position.x, position.y, position.z,
                 position.t, position.r
                 )
-    except:
-        print('movement: Could not execute movement, demo mode')
+    except Exception as e:
+        print(f'error {e}: movement abs: Could not execute movement, demo mode')
         return (5,5,5,5,5)
 
 

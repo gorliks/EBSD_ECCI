@@ -28,7 +28,7 @@ class BeamType(Enum):
 
 class Microscope():
     def __init__(self, settings: dict = None, log_path: str = None,
-                 ip_address: str = "10.0.0.1", demo: bool=True):
+                 ip_address: str = "192.168.0.1", demo: bool=True):
         self.settings = settings
         self.demo = demo
         self.ip_address = ip_address
@@ -94,10 +94,15 @@ class Microscope():
         if not self.demo:
             if gui_settings is not None:
                 settings = self.update_image_settings(gui_settings)
+                print('settings = ', settings)
                 self.microscope.imaging.set_active_view(settings.quadrant)
-                self.microscope.beams.electron_beam.horizontal_field_width.value = \
-                    settings.horizontal_field_width * 1e-6
-                if settings["autocontrast"]==True:
+
+                hfw = settings.horizontal_field_width
+                if hfw > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
+                    hfw = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
+                self.microscope.beams.electron_beam.horizontal_field_width.value = hfw
+
+                if settings.autocontrast==True:
                     self.autocontrast(quadrant=settings.quadrant)
 
                 grab_frame_settings = GrabFrameSettings(resolution=settings.resolution,
@@ -139,8 +144,9 @@ class Microscope():
         """
         if not self.demo:
             self.microscope.imaging.set_active_view(quadrant)
-            image = microscope.imaging.get_image()
+            image = self.microscope.imaging.get_image()
             return image
+
         else:
             simulated_image = np.random.randint(0, 255, [512,768])
             print(simulated_image.shape)
@@ -153,10 +159,11 @@ class Microscope():
                 self.microscope.specimen.stage.current_position
             MicroscopeState.update_stage_position(self.microscope_state,
                                                   x=position.x, y=position.y, z=position.z,
-                                                  t=pozition.t, r=position.r)
-            return position
-        except:
-            print('demo mode, simulated coordinates are:')
+                                                  t=position.t, r=position.r)
+            return (position.x, position.y, position.z,
+                    position.t, position.r)
+        except Exception as e:
+            print('demo mode, error {e}, simulated coordinates are:')
             #[x, y, z, t, r] = np.random.randint( 0,5, [5,1] ).astype(float)
             [x, y, z, t, r] = np.random.rand(5, 1)
             MicroscopeState.update_stage_position(self.microscope_state,
@@ -180,10 +187,11 @@ class Microscope():
                 movement.move_relative(self.microscope,
                                    dx=x, dy=y, dz=z,
                                    dr=r, dt=t)
-            x, y, z, r, t = new_position[0], new_position[1], new_position[2], new_position[3], new_position[4]
+            x, y, z, r, t = new_position[0], new_position[1], new_position[2], \
+                            new_position[3], new_position[4]
             MicroscopeState.update_stage_position(self.microscope_state,
                                                   x=x, y=y, z=z, r=r, t=t)
-            print('simulated coords = ', MicroscopeState.get_stage_position(self.microscope_state))
+            print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
 
 
         if move_type=="Absolute":
@@ -192,10 +200,11 @@ class Microscope():
                 movement.move_absolute(self.microscope,
                                        x=x, y=y, z=z,
                                        t=t, r=r)
-            x, y, z, r, t = new_position[0], new_position[1], new_position[2], new_position[3], new_position[4]
+            x, y, z, r, t = new_position[0], new_position[1], new_position[2], \
+                            new_position[3], new_position[4]
             MicroscopeState.update_stage_position(self.microscope_state,
                                                   x=x, y=y, z=z, r=r, t=t)
-            print('simulated coords = ', MicroscopeState.get_stage_position(self.microscope_state))
+            print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
 
 
 
@@ -208,20 +217,18 @@ class Microscope():
         -------
         float: system-level scan rotation angle in degrees
         """
-        rotation_angle_rad = np.deg2rad(rotation_angle)
-
         try:
             if type=="Relative":
                 """Change the current scan rotation by the specified value"""
-                self.microscope.beams.ion_beam.scanning.rotation.value += rotation_angle_rad
+                self.microscope.beams.electron_beam.scanning.rotation.value += rotation_angle
             else:
                 """Absolute value of the scan rotation"""
-                self.microscope.beams.ion_beam.scanning.rotation.value = rotation_angle_rad
+                self.microscope.beams.electron_beam.scanning.rotation.value = rotation_angle
 
-            return np.rad2deg(self.microscope.beams.ion_beam.scanning.rotation.value)
+            return np.rad2deg(self.microscope.beams.electron_beam_beam.scanning.rotation.value)
 
-        except:
-            print(f'demo mode, scan rotation {type} by {rotation_angle} deg')
+        except Exception as e:
+            print(f'demo mode, scan rotation {type} by {rotation_angle} deg, error {e}')
             return rotation_angle
 
 
@@ -237,15 +244,15 @@ class Microscope():
         MicroscopeState
         """
         try:
-            position = self.update_stage_position()
-            self.microscope_state.x = position.x
-            self.microscope_state.y = position.y
-            self.microscope_state.z = position.z
-            self.microscope_state.t = position.t
-            self.microscope_state.r = position.r
+            (x,y,z,t,r) = self.update_stage_position()
+            self.microscope_state.x = x
+            self.microscope_state.y = y
+            self.microscope_state.z = z
+            self.microscope_state.t = t
+            self.microscope_state.r = r
             self.microscope_state.horizontal_field_width = \
                 self.microscope.beams.electron_beam.horizontal_field_width.value
-            self.microscope_state.resolution = self.microscope.beams.electron_beam.scanning.resolution
+            self.microscope_state.resolution = self.microscope.beams.electron_beam.scanning.resolution.value
             self.microscope_state.hv = self.microscope.beams.electron_beam.high_voltage.value
             self.microscope_state.scan_rotation_angle = \
                 self.microscope.beams.electron_beam.scanning.rotation.value
@@ -254,7 +261,8 @@ class Microscope():
             beam_shift = self.microscope.beams.electron_beam.beam_shift.value # returns Point()
             self.microscope_state.beam_shift_x = beam_shift.x
             self.microscope_state.beam_shift_y = beam_shift.y
-        except:
+        except Exception as e:
+            print(f"Could not get the microscope state, error {e}")
             self.microscope_state.x = 2
             self.microscope_state.y = 1
             self.microscope_state.z = 0

@@ -96,7 +96,16 @@ def save_image(image, path=None, file_name=None):
         file_name = "no_name_" + timestamp + '.tif'
 
     file_name = os.path.join(path, file_name)
-    print(file_name)
+    #print(file_name)
+
+    try:
+        """Adorned image needs only path"""
+        image.save(file_name)
+
+    except Exception as e:
+        print('error {e}, Image could not be saved')
+
+
 
 
 def populate_experiment_data_frame(data_frame : dict,

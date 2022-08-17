@@ -72,7 +72,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.initialise_hardware()
         self.stack_settings = StackSettings()
         self.stack_settings.x_range = 100
-        print(self.stack_settings)
 
         self.pushButton_abort_stack_collection.setEnabled(False)
         self._abort_clicked_status = False
@@ -90,7 +89,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_acquire.clicked.connect(lambda: self.acquire_image())
         self.pushButton_select_directory.clicked.connect(lambda: self.select_directory())
         self.pushButton_initialise_microscope.clicked.connect(lambda: self.initialise_hardware())
-        self.pushButton_acquire.clicked.connect(lambda: self.acquire_image())
         self.pushButton_last_image.clicked.connect(lambda: self.last_image())
         self.pushButton_update_stage_position.clicked.connect(lambda: self.update_stage_position())
         self.pushButton_move_stage.clicked.connect(lambda: self.move_stage())
@@ -167,20 +165,25 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def acquire_image(self):
         gui_settings = self.create_settings_dict()
-        image = \
+        self.image = \
             self.microscope.acquire_image(gui_settings=gui_settings)
-        self.update_display(image=image)
+        self.update_display(image=self.image)
+        return self.image
 
     def last_image(self):
         quadrant = int(self.comboBox_quadrant.currentText())
-        image = \
+        self.image = \
             self.microscope.last_image(quadrant=quadrant)
+        try:
+            image = self.image.data
+        except:
+            image = self.image
         self.update_display(image=image)
 
     def update_stage_position(self):
         self.comboBox_move_type.setCurrentText("Absolute")
         self.microscope.update_stage_position()
-        self.doubleSpinBox_stage_x.setValue(self.microscope.microscope_state.x / 1 - 6)
+        self.doubleSpinBox_stage_x.setValue(self.microscope.microscope_state.x / 1e-6)
         self.doubleSpinBox_stage_y.setValue(self.microscope.microscope_state.y / 1e-6)
         self.doubleSpinBox_stage_z.setValue(self.microscope.microscope_state.z / 1e-6)
         r = np.rad2deg(self.microscope.microscope_state.r)
@@ -207,6 +210,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def set_scan_rotation(self):
         rotation_angle = self.doubleSpinBox_scan_rotation.value()
+        rotation_angle = np.deg2rad(rotation_angle)
         self.microscope.set_scan_rotation(rotation_angle=rotation_angle)
 
     ##########################################################################################
@@ -248,9 +252,9 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.label_image_frame1.layout().addWidget(self.toolbar_SEM)
         self.label_image_frame1.layout().addWidget(self.canvas_SEM)
 
-    # TODO fix bugs with plotting data and using pop-up plots
-    def update_display(self, image):
 
+    """TODO fix bugs with plotting data and using pop-up plots"""
+    def update_display(self, image):
         ###### added ######
         # plt.axis("off")
         # self.label_image_frame1.layout().removeWidget(self.canvas_SEM)
@@ -259,6 +263,11 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         # self.toolbar_SEM.deleteLater()
         # self.canvas_SEM = _FigureCanvas(self.figure_SEM)
         ###### end added ######
+
+        try:
+            image = image.data
+        except:
+            image = image
 
         self.figure_SEM.clear()
         self.figure_SEM.patch.set_facecolor(
@@ -362,11 +371,14 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
            do not move the tilt or stage rotation, the current position are the start point
         """
         if Nx >= 3:
-            self.microscope.move_stage(x=-1 * self.stack_settings.x_range, move_type="Relative")
+            self.microscope.move_stage(x=-1 * self.stack_settings.x_range - self.stack_settings.dx,
+                                       move_type="Relative")
         if Ny >= 3:
-            self.microscope.move_stage(y=-1 * self.stack_settings.y_range, move_type="Relative")
+            self.microscope.move_stage(y=-1 * self.stack_settings.y_range - self.stack_settings.dy,
+                                       move_type="Relative")
         if Nz >= 3:
-            self.microscope.move_stage(z=-1 * self.stack_settings.z_range, move_type="Relative")
+            self.microscope.move_stage(z=-1 * self.stack_settings.z_range - self.stack_settings.dz,
+                                       move_type="Relative")
 
         def _run_loop():
             counter = 0
@@ -387,10 +399,11 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                             if Nt >= 2: self.microscope.move_stage(t=self.stack_settings.dt,
                                                                    move_type="Relative")
                             for qq in range(Nr):
+
                                 """update gui settings manually if the scan is long"""
                                 gui_settings = self.create_settings_dict()
                                 self.label_r.setText(f"{qq + 1} of")
-                                if Nt >= 2:
+                                if Nr >= 2:
                                     self.microscope.move_stage(r=self.stack_settings.dr,
                                                                move_type="Relative")
 
@@ -400,16 +413,18 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
                                 """correct stage rotation with scan rotation for image alignment"""
                                 if self.checkBox_scan_rotation_correction.isChecked():
-                                    self.microscope.set_scan_rotation(rotation_angle=self.stack_settings.dr,
+                                    self.microscope.set_scan_rotation(rotation_angle=-1*self.stack_settings.dr,
                                                                       type="Relative")
 
                                 self.microscope._get_current_microscope_state()
 
                                 file_name = '%06d_' % counter + sample_name + '_' + \
                                             utils.current_timestamp() + '.tif'
-                                image = self.microscope.acquire_image(gui_settings=gui_settings)
+
+                                """update_display is called inside acquire_image"""
+                                image = self.acquire_image()
+
                                 utils.save_image(image, path=self.stack_dir, file_name=file_name)
-                                self.update_display(image=image)
 
                                 self.experiment_data = utils.populate_experiment_data_frame(
                                     data_frame=self.experiment_data,
@@ -428,8 +443,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                     return
 
                                 counter += 1
-                                print(f'sleeping for {self.gui_settings["imaging"]["dwell_time"]}')
-                                time.sleep(self.gui_settings["imaging"]["dwell_time"] / 1e-6)
+                                #print(f'sleeping for {self.gui_settings["imaging"]["dwell_time"]}')
+                                #time.sleep(self.gui_settings["imaging"]["dwell_time"] / 1e-6)
 
         _run_loop()
         self.pushButton_acquire.setEnabled(True)
@@ -442,7 +457,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                               path=self.stack_dir,
                               file_name='summary'
                               )
-        self.microscope._restore_microscope_state(state=stored_microscope_state)
+        #self.microscope._restore_microscope_state(state=stored_microscope_state)
 
     def _abort_clicked(self):
         print('------------ abort clicked --------------')
@@ -492,6 +507,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             coords = [0, 0, 0, 0, 0]
         elif move_type == "Absolute":
             coords = self.microscope.update_stage_position()
+        else:
+            return
 
         self.doubleSpinBox_stage_x.setValue(coords[0] / 1e-6)
         self.doubleSpinBox_stage_y.setValue(coords[1] / 1e-6)
@@ -516,6 +533,6 @@ def main(demo):
 
 
 if __name__ == '__main__':
-    main(demo=True)
+    main(demo=False)
     stack_settings = StackSettings()
     # stack_settings.x_range = 100
