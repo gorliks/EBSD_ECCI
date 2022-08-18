@@ -21,18 +21,14 @@ from main import BeamType
 
 def pixel_to_realspace_coordinate(coord: list, image) -> list:
     """Convert pixel image coordinate to real space coordinate.
-
     This conversion deliberately ignores the nominal pixel size in y,
     as this can lead to inaccuracies if the sample is not flat in y.
-
     Parameters
     ----------
     coord : listlike, float
         In x, y format & pixel units. Origin is at the top left.
-
     image : AdornedImage
         Image the coordinate came from.
-
     Returns
     -------
     realspace_coord
@@ -47,7 +43,7 @@ def pixel_to_realspace_coordinate(coord: list, image) -> list:
         else:
             y_shape, x_shape = image.data.shape
         pixelsize_x = image.metadata.binary_result.pixel_size.x
-        pixelsize_y = image.metadata.binary_result.pixel_size.Y
+        pixelsize_y = image.metadata.binary_result.pixel_size.y
         # deliberately don't use the y pixel size, any tilt will throw this off
 
     except AttributeError:

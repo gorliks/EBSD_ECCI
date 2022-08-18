@@ -1,3 +1,4 @@
+import movement
 import qtdesigner_files.main_gui as gui_main
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QObject, QThread, QThreadPool, QTimer, pyqtSignal
@@ -65,7 +66,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.DIR = os.getcwd()
         self.coords = [0, 0]
-        self.bit_depth = 16
 
         self.setup_connections()
         self.initialise_image_frames()
@@ -97,6 +97,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_abort_stack_collection.clicked.connect(lambda: self._abort_clicked())
         self.pushButton_collect_stack.clicked.connect(lambda: self.collect_stack())
         self.comboBox_move_type.currentTextChanged.connect(lambda: self._change_of_move_type())
+        self.pushButton_update_SEM_state.clicked.connect(lambda: self.update_SEM_state())
         #
         self.pushButton_correlation.clicked.connect(lambda: self.test_correlation())
 
@@ -137,6 +138,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         quadrant = int(self.comboBox_quadrant.currentText())
         path = self.DIR
         sample_name = self.plainTextEdit_sample_name.toPlainText()
+        bit_depth = int(self.comboBox_bit_depth.currentText())
+
 
         self.gui_settings = {
             "imaging": {
@@ -150,7 +153,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                 "quadrant": quadrant,
                 "path": path,
                 "sample_name": sample_name,
-                "bit_depth": self.bit_depth
+                "bit_depth": bit_depth
             }
         }
         return self.gui_settings
@@ -180,16 +183,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             image = self.image
         self.update_display(image=image)
 
-    def update_stage_position(self):
-        self.comboBox_move_type.setCurrentText("Absolute")
-        self.microscope.update_stage_position()
-        self.doubleSpinBox_stage_x.setValue(self.microscope.microscope_state.x / 1e-6)
-        self.doubleSpinBox_stage_y.setValue(self.microscope.microscope_state.y / 1e-6)
-        self.doubleSpinBox_stage_z.setValue(self.microscope.microscope_state.z / 1e-6)
-        r = np.rad2deg(self.microscope.microscope_state.r)
-        self.doubleSpinBox_stage_r.setValue(r)
-        t = np.rad2deg(self.microscope.microscope_state.t)
-        self.doubleSpinBox_stage_t.setValue(t)
 
     def move_stage(self):
         compucentric = self.checkBox_compucentric.isChecked()
@@ -207,6 +200,37 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                    compucentric=compucentric,
                                    move_type=move_type)
         self.microscope.update_stage_position()
+
+
+    def update_stage_position(self):
+        self.comboBox_move_type.setCurrentText("Absolute")
+        self.microscope.update_stage_position()
+        self.doubleSpinBox_stage_x.setValue(self.microscope.microscope_state.x / 1e-6)
+        self.doubleSpinBox_stage_y.setValue(self.microscope.microscope_state.y / 1e-6)
+        self.doubleSpinBox_stage_z.setValue(self.microscope.microscope_state.z / 1e-6)
+        r = np.rad2deg(self.microscope.microscope_state.r)
+        self.doubleSpinBox_stage_r.setValue(r)
+        t = np.rad2deg(self.microscope.microscope_state.t)
+        self.doubleSpinBox_stage_t.setValue(t)
+
+
+    def update_SEM_state(self):
+        self.microscope._get_current_microscope_state()
+        self.update_stage_position()
+        self.doubleSpinBox_working_distance.setValue(self.microscope.microscope_state.working_distance / 1e-3)
+
+        self.doubleSpinBox_high_voltage.setValue(self.microscope.microscope_state.hv)
+        self.doubleSpinBox_beam_current.setValue(self.microscope.microscope_state.beam_current / 1e-9)
+        self.doubleSpinBox_brightness.setValue(self.microscope.microscope_state.brightness)
+
+        self.spinBox_horizontal_field_width.setValue(self.microscope.microscope_state.horizontal_field_width / 1e-6)
+        self.doubleSpinBox_scan_rotation.setValue(
+            np.rad2deg(self.microscope.microscope_state.scan_rotation_angle)
+        )
+        self.doubleSpinBox_beam_shift_x.setValue(self.microscope.microscope_state.beam_shift_x)
+        self.doubleSpinBox_beam_shift_y.setValue(self.microscope.microscope_state.beam_shift_y)
+
+
 
     def set_scan_rotation(self):
         rotation_angle = self.doubleSpinBox_scan_rotation.value()
@@ -290,12 +314,14 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             coords = []
             coords.append(event.ydata)
             coords.append(event.xdata)
-            self.coords = np.flip(coords[-2:], axis=0)
-            print(self.coords)
+            coords = np.flip(coords[-2:], axis=0)
+            coords = movement.pixel_to_realspace_coordinate(coord=coords, image=image)
+            print(coords)
             self.doubleSpinBox_point_x.setValue(coords[0])
             self.doubleSpinBox_point_y.setValue(coords[1])
 
         self.figure_SEM.canvas.mpl_connect("button_press_event", on_click)
+
 
     def estimate_stack_time(self):
         gui_settings = self.create_settings_dict()
@@ -313,6 +339,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                           pixels_in_frame * overhead
         self.label_messages.setText(f"Time to collect {total_frames} frames at {resolution} is {time_to_acquire:.1f} s "
                                     f"or {time_to_acquire / 60:.1f} min")
+
 
     def collect_stack(self):
         """ Update all the settings, store the current microscope state and
@@ -443,8 +470,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                     return
 
                                 counter += 1
-                                #print(f'sleeping for {self.gui_settings["imaging"]["dwell_time"]}')
-                                #time.sleep(self.gui_settings["imaging"]["dwell_time"] / 1e-6)
 
         _run_loop()
         self.pushButton_acquire.setEnabled(True)
@@ -459,10 +484,12 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                               )
         #self.microscope._restore_microscope_state(state=stored_microscope_state)
 
+
     def _abort_clicked(self):
         print('------------ abort clicked --------------')
         self.pushButton_abort_stack_collection.setEnabled(False)
         self._abort_clicked_status = True
+
 
     def _update_stack_settings(self):
         print('uploading stack settings...')

@@ -752,8 +752,8 @@ def normalise(img):
 
 
 def circ_mask(size=(128, 128), radius=32, sigma=3):
-    x = size[0]
-    y = size[1]
+    x = size[1]
+    y = size[0]
     img = Image.new('I', size)
     draw = ImageDraw.Draw(img)
     draw.ellipse((x / 2 - radius, y / 2 - radius, x / 2 + radius, y / 2 + radius), fill='white', outline='white')
@@ -780,7 +780,7 @@ def rectangular_mask(size=(128, 128), sigma=None):
 def ellipse_mask(size=(128, 128), radius1=32, radius2=32, sigma=3):
     x = size[0]
     y = size[1]
-    img = Image.new('I', size)
+    img = Image.new('I', size=(y,x))
     draw = ImageDraw.Draw(img)
     draw.ellipse((x / 2 - radius1, y / 2 - radius2, x / 2 + radius1, y / 2 + radius2), fill='white', outline='white')
     tmp = np.array(img, float) / 255
@@ -792,10 +792,10 @@ def ellipse_mask(size=(128, 128), radius1=32, radius2=32, sigma=3):
 
 
 def bandpass_mask(size=(128, 128), low_pass=32, high_pass=2, sigma=3):
-    x = size[0]
-    y = size[1]
-    lowpass = circ_mask(size=(x, y), radius=low_pass, sigma=0)
-    highpass = circ_mask(size=(x, y), radius=high_pass, sigma=0)
+    x = size[1]
+    y = size[0]
+    lowpass = circ_mask(size=(x,y), radius=low_pass, sigma=0)
+    highpass = circ_mask(size=(x,y), radius=high_pass, sigma=0)
     highpass = -1 * (highpass - 1)
     bandpass = lowpass * highpass
     if sigma > 0:
@@ -820,7 +820,7 @@ def crosscorrelation(img1, img2, filter='no', *args, **kwargs):
             print('ERROR in xcorr: check bandpass parameters')
             return
 
-        bandpass = bandpass_mask(size=(img1.shape[1], img1.shape[0]),
+        bandpass = bandpass_mask(size=img1.shape,
                                  low_pass=low_pass,
                                  high_pass=high_pass,
                                  sigma=sigma)
@@ -844,6 +844,7 @@ def crosscorrelation(img1, img2, filter='no', *args, **kwargs):
     return xcorr
 
 
+
 def shift_from_crosscorrelation_simple_images(img1, img2, low_pass=256, high_pass=22, sigma=2):
     img1_norm = normalise(img1)
     img2_norm = normalise(img2)
@@ -854,17 +855,22 @@ def shift_from_crosscorrelation_simple_images(img1, img2, low_pass=256, high_pas
     maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
     print('\n', maxX, maxY)
     cen = np.asarray(xcorr.shape) / 2
-    err = np.array(cen - [maxX, maxY], int)
+    shift = np.array(cen - [maxX, maxY], int)
     print('centre = ', cen)
-    print("Shift between 1 and 2 is = " + str(err))
-    print("img2 is X-shifted by ", err[1], '; Y-shifted by ', err[0])
-    return err[1], err[0]
-
+    print("Shift between 1 and 2 is = " + str(shift))
+    print("img2 is X-shifted by ", shift[1], '; Y-shifted by ', shift[0])
+    return shift
 
 
 
 def subpixel_shift_from_crosscorrelation(ref_image, offset_image, upsample_factor=100):
     # pixel precision
+    try:
+        ref_image = ref_image.data
+        offset_image = offset_image.date
+    except:
+        ref_image = ref_image
+        offset_image = offset_image
     shift, error, diffphase = phase_cross_correlation(ref_image, offset_image)
     image_product = np.fft.fft2(ref_image) * np.fft.fft2(offset_image).conj()
     cc_image = np.fft.fftshift(np.fft.ifft2(image_product))
@@ -875,9 +881,19 @@ def subpixel_shift_from_crosscorrelation(ref_image, offset_image, upsample_facto
     shift, error, diffphase = phase_cross_correlation(ref_image, offset_image,
                                                       upsample_factor=upsample_factor)
     print(f'Detected subpixel offset (y, x): {shift}')
-    offset_image_aligned = scipy.ndimage.shift(offset_image, shift,
-                                               output=None, order=3, mode='constant', cval=0.0, prefilter=True)
-    return shift, offset_image_aligned
+
+    return shift
+
+
+def correct_image_by_shift(image,
+                           shift : list):
+    try:
+        image = image.data
+    except:
+        image = image
+    aligned = scipy.ndimage.shift(image, shift,
+                                  output=None, order=3, mode='constant', cval=0.0, prefilter=True)
+    return aligned
 
 
 
@@ -885,6 +901,7 @@ def load_image(file_path):
     image = Image.open(file_path)
     image = np.array(image)
     return image
+
 
 
 

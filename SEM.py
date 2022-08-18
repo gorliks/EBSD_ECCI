@@ -14,6 +14,7 @@ import numpy as np
 from dataclasses import dataclass
 import movement
 import utils
+import correlation
 from utils import MicroscopeState
 from utils import ImageSettings
 from importlib import reload  # Python 3.4+
@@ -34,8 +35,6 @@ class Microscope():
         self.ip_address = ip_address
         self.log_path = log_path
         self.microscope_state = MicroscopeState()
-
-        print('image settings: ', self.settings)
 
         try:
             print('initialising microscope')
@@ -112,14 +111,15 @@ class Microscope():
                 image = self.microscope.imaging.grab_frame(grab_frame_settings)
             else:
                 image = self.microscope.imaging.grab_frame()
+
             return image
 
         else:
             print('demo mode   ')
             if gui_settings is not None:
                 settings = self.update_image_settings(gui_settings)
+                print('settings = ', settings)
                 resolution = settings.resolution
-                print("resolution = ", resolution)
                 [width, height] = np.array(resolution.split("x")).astype(int)
             else:
                 height, width = 768, 512
@@ -232,6 +232,50 @@ class Microscope():
             return rotation_angle
 
 
+    def beam_shift_alignment(self,
+                             ref_image,
+                             image,
+                             reduced_area,
+    ) -> None:
+        """Align the images by adjusting the beam shift, instead of moving the stage
+                (increased precision, lower range)
+        Args:
+            ref_image (AdornedImage): reference image to align to
+            reduced_area (Rectangle): The reduced area to image with.
+        """
+        # # align using cross correlation
+        shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,
+                                                                 offset_image=image,
+                                                                 upsample_factor=100)
+        shift = movement.pixel_to_realspace_coordinate(coord=shift,
+                                                       image=ref_image)
+        dx = shift[1]
+        dy = shift[0]
+
+        # adjust beamshift
+        try:
+            microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
+        except Exception as e:
+            print(f"Could not apply beam shift, error {e}")
+
+
+    def reset_beam_shifts(self):
+        """Set the beam shift to zero for the electron beam
+        Args:
+            None
+        """
+        # logging.info(
+        #     f"reseting ebeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value} "
+        # )
+        print(f"reseting e-beam shift to (0, 0) from: {self.microscope.beams.electron_beam.beam_shift.value}")
+        microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+        print(f"reset beam shifts to zero complete")
+        # logging.info(f"reset beam shifts to zero complete")
+
+
+
+
+
 
     def _get_current_microscope_state(self) -> MicroscopeState:
         """Acquires the current microscope state to store
@@ -250,17 +294,25 @@ class Microscope():
             self.microscope_state.z = z
             self.microscope_state.t = t
             self.microscope_state.r = r
+            self.microscope_state.working_distance = \
+                self.microscope.beams.electron_beam.working_distance.value
+
             self.microscope_state.horizontal_field_width = \
                 self.microscope.beams.electron_beam.horizontal_field_width.value
             self.microscope_state.resolution = self.microscope.beams.electron_beam.scanning.resolution.value
+
             self.microscope_state.hv = self.microscope.beams.electron_beam.high_voltage.value
+            self.microscope_state.beam_current = self.microscope.beams.electron_beam.beam_shift.value
+
             self.microscope_state.scan_rotation_angle = \
                 self.microscope.beams.electron_beam.scanning.rotation.value
             self.microscope_state.brightness = self.microscope.detector.brightness.value
             self.microscope_state.contrast = self.microscope.detector.contrast.value
+
             beam_shift = self.microscope.beams.electron_beam.beam_shift.value # returns Point()
             self.microscope_state.beam_shift_x = beam_shift.x
             self.microscope_state.beam_shift_y = beam_shift.y
+
         except Exception as e:
             print(f"Could not get the microscope state, error {e}")
             self.microscope_state.x = 2
@@ -269,10 +321,11 @@ class Microscope():
             self.microscope_state.t = 0
             self.microscope_state.r = 0
             self.microscope_state.scan_rotation_angle = 0
+
         return self.microscope_state
 
 
-    def _restore_microscope_state(self, state : MicroscopeState):
+    def _restore_microscope_state(self, state : MicroscopeState) -> None:
         """Restores the microscope state from the stored MicroscopeState variable
         Args:
             state : MicroscopeState
@@ -290,19 +343,16 @@ class Microscope():
                             t=state.t, r=state.r,
                             move_type='Absolute')
             self.microscope.beams.electron_beam.horizontal_field_width.value = \
-                state.horizontal_field_width # no need of conversion, the state value from the machine
+                state.horizontal_field_width
             self.microscope.beams.electron_beam.scanning.resolution = state.resolution
             self.microscope.beams.electron_beam.scanning.rotation.value =\
-                state.scan_rotation_angle # no need of conversion, the state value from the machine
+                state.scan_rotation_angle
             self.microscope.detector.brightness.value = state.brighness
             self.microscope.detector.contrast.value = state.contrast
             self.microscope.beams.electron_beam.beam_shift.value = Point(state.beam_shift_x,
                                                                          state.beam_shift_y)
         except:
             print('Could not restore the microscope state')
-
-
-
 
 
     def update_image_settings(self,

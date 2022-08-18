@@ -29,6 +29,8 @@ class MicroscopeState:
     contrast : float = 0
     beam_shift_x : float = 0
     beam_shift_y : float = 0
+    working_distance : float = 0
+
 
     def __to__dict__(self) -> dict:
         state_dict = {
@@ -44,7 +46,10 @@ class MicroscopeState:
             "brightness" : self.brightness,
             "contrast" : self.contrast,
             "beam_shift_x" : self.beam_shift_x,
-            "beam_shift_y" : self.beam_shift_y
+            "beam_shift_y" : self.beam_shift_y,
+            "hv" : self.hv,
+            "beam_current" : self.beam_current,
+            "working_distance" : self.working_distance
         }
         return state_dict
 
