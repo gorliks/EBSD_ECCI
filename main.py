@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import QFileDialog
 from importlib import reload  # Python 3.4+
 
 from dataclasses import dataclass
-from enum import Enum
 
 import sys, time, os
 import numpy as np
@@ -100,6 +99,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_update_SEM_state.clicked.connect(lambda: self.update_SEM_state())
         #
         self.pushButton_correlation.clicked.connect(lambda: self.test_correlation())
+        self.pushButton_open_file.clicked.connect(lambda: self._open_file())
 
 
     def test_correlation(self):
@@ -528,6 +528,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.spinBox_Nt.setValue(self.stack_settings.Nt)
         self.spinBox_Nr.setValue(self.stack_settings.Nr)
 
+
     def _change_of_move_type(self):
         move_type = self.comboBox_move_type.currentText()
         if move_type == "Relative":
@@ -542,6 +543,31 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.doubleSpinBox_stage_z.setValue(coords[2] / 1e-6)
         self.doubleSpinBox_stage_t.setValue(np.rad2deg(coords[3]))
         self.doubleSpinBox_stage_r.setValue(np.rad2deg(coords[4]))
+
+
+    def _open_file(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getOpenFileName(self,
+                                                   "QFileDialog.getOpenFileName()",
+                                                   "", "TIF files (*.tif);;TIFF files (*.tiff);;All Files (*)",
+                                                   options=options)
+        if file_name:
+            print(file_name)
+            # data format files saved by PiXet detector
+            if file_name.lower().endswith('.tif') or file_name.lower().endswith('.tiff'):
+                image = correlation.load_image(file_name)
+                self.update_display(image=image)
+
+            # other file format, not tiff, for example numpy array data, or txt format
+            else:
+                try:
+                    image = np.loadtxt(file_name)
+                    self.update_image(image=image)
+                except:
+                    self.label_messages.setText('File or mode not supported')
+
+
 
     def disconnect(self):
         # logging.info("Running cleanup/teardown")

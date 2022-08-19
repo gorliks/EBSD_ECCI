@@ -320,7 +320,7 @@
           <rect>
            <x>220</x>
            <y>50</y>
-           <width>73</width>
+           <width>81</width>
            <height>22</height>
           </rect>
          </property>
@@ -791,7 +791,7 @@
           <rect>
            <x>140</x>
            <y>330</y>
-           <width>93</width>
+           <width>101</width>
            <height>28</height>
           </rect>
          </property>
@@ -1312,7 +1312,7 @@
           <rect>
            <x>10</x>
            <y>330</y>
-           <width>93</width>
+           <width>111</width>
            <height>28</height>
           </rect>
          </property>
@@ -2087,19 +2087,6 @@
           <string>remove static background</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_open_file">
-         <property name="geometry">
-          <rect>
-           <x>320</x>
-           <y>60</y>
-           <width>93</width>
-           <height>25</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Open file</string>
-         </property>
-        </widget>
         <widget class="QLabel" name="label_38">
          <property name="geometry">
           <rect>
@@ -2370,14 +2357,27 @@
       <widget class="QPushButton" name="pushButton_correlation">
        <property name="geometry">
         <rect>
-         <x>430</x>
+         <x>400</x>
          <y>580</y>
-         <width>101</width>
+         <width>131</width>
          <height>28</height>
         </rect>
        </property>
        <property name="text">
         <string>correlation test</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_open_file">
+       <property name="geometry">
+        <rect>
+         <x>530</x>
+         <y>550</y>
+         <width>93</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Open file</string>
        </property>
       </widget>
      </widget>
@@ -2390,7 +2390,7 @@
      <x>0</x>
      <y>0</y>
      <width>1278</width>
-     <height>26</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
