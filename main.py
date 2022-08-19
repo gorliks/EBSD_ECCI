@@ -170,6 +170,15 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         gui_settings = self.create_settings_dict()
         self.image = \
             self.microscope.acquire_image(gui_settings=gui_settings)
+
+        try:
+            self.pixelsize_x = self.image.metadata.binary_result.pixel_size.x
+        except Exception as e:
+            self.pixelsize_x = 1
+            print(f'Cannot extract pixel size from the image metadata, error {e}')
+
+        self.doubleSpinBox_pixel_size.setValue(self.pixelsize_x / 1e-9)
+        print(f"pixel size = {self.pixelsize_x/1e-9} nm")
         self.update_display(image=self.image)
         return self.image
 

@@ -217,9 +217,9 @@
         <widget class="QPushButton" name="pushButton_select_directory">
          <property name="geometry">
           <rect>
-           <x>310</x>
+           <x>299</x>
            <y>100</y>
-           <width>100</width>
+           <width>121</width>
            <height>28</height>
           </rect>
          </property>
@@ -254,6 +254,21 @@
          <item>
           <property name="text">
            <string>6144x4096</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>1024x884</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>2048x1768</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>4096x3536</string>
           </property>
          </item>
         </widget>
@@ -718,7 +733,7 @@
           <rect>
            <x>170</x>
            <y>240</y>
-           <width>111</width>
+           <width>131</width>
            <height>31</height>
           </rect>
          </property>
@@ -2318,8 +2333,8 @@
       <widget class="QLabel" name="label_34">
        <property name="geometry">
         <rect>
-         <x>100</x>
-         <y>550</y>
+         <x>10</x>
+         <y>575</y>
          <width>201</width>
          <height>31</height>
         </rect>
@@ -2378,6 +2393,48 @@
        </property>
        <property name="text">
         <string>Open file</string>
+       </property>
+      </widget>
+      <widget class="QDoubleSpinBox" name="doubleSpinBox_pixel_size">
+       <property name="geometry">
+        <rect>
+         <x>75</x>
+         <y>540</y>
+         <width>101</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <double>0.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1000000000.000000000000000</double>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_31">
+       <property name="geometry">
+        <rect>
+         <x>15</x>
+         <y>542</y>
+         <width>71</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>pixel size</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_67">
+       <property name="geometry">
+        <rect>
+         <x>180</x>
+         <y>542</y>
+         <width>31</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>nm</string>
        </property>
       </widget>
      </widget>
