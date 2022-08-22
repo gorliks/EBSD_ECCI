@@ -526,10 +526,10 @@ def correlate_images(src_image, target_image, output_path, matched_points_dict, 
     """Correlates two images using points chosen by the user
     Parameters
     ----------
-    fluorescence_image_rgb :
+    src_image :
         numpy array with shape (cols, rows, channels)
-    fibsem_image : AdornedImage.
-        Expecting .data attribute of shape (cols, rows, channels)
+    target_image : AdornedImage.
+        numpy array with shape (cols, rows, channels)
     output : str
         Path to save location
     matched_points_dict : dict
@@ -743,7 +743,9 @@ def save_text(output_filename, transformation, matched_points_dict):
     return output_text_filename
 
 
-
+####################################################################################################
+####################################################################################################
+####################################################################################################
 
 
 def normalise(img):
@@ -751,24 +753,35 @@ def normalise(img):
     return img_normalised
 
 
-def circ_mask(size=(128, 128), radius=32, sigma=3):
-    x = size[1]
-    y = size[0]
-    img = Image.new('I', size)
-    draw = ImageDraw.Draw(img)
-    draw.ellipse((x / 2 - radius, y / 2 - radius, x / 2 + radius, y / 2 + radius), fill='white', outline='white')
-    tmp = np.array(img, float) / 255
+def bandpass_mask(size=(512,768), low_pass=256, high_pass=10, sigma=5):
+    centre = ((np.asarray(size) / 2)).astype(int)
+    rr,cc = skimage.draw.ellipse(r=centre[0], c=centre[1],
+                                   r_radius=low_pass,
+                                   c_radius=low_pass,
+                                   shape=size,
+                                   rotation=0.0)
+    circle_large = np.zeros(size)
+    circle_large[rr,cc] = 1
+
+    if high_pass>=low_pass: high_pass=0
+    rr,cc = skimage.draw.ellipse(r=centre[0], c=centre[1],
+                                   r_radius=high_pass,
+                                   c_radius=high_pass,
+                                   shape=size,
+                                   rotation=0.0)
+    circle_small = np.zeros(size)
+    circle_small[rr,cc] = 1
+
+    bandpass = circle_large - circle_small
     if sigma > 0:
-        mask = ndi.filters.gaussian_filter(tmp, sigma=sigma)
-    else:
-        mask = tmp
-    return mask
+        bandpass = ndi.filters.gaussian_filter(bandpass, sigma=sigma)
+    return bandpass
 
 
 def rectangular_mask(size=(128, 128), sigma=None):
     # leave at least a 5% gap on each edge
-    start = np.round(np.array(size) * 0.25)
-    extent = np.round(np.array(size) * 0.5)
+    start = np.round(np.array(size) * 0.05)
+    extent = np.round(np.array(size) * 0.90)
     rr, cc = skimage.draw.rectangle(start, extent=extent, shape=size)
     mask = np.zeros(size)
     mask[rr.astype(int), cc.astype(int)] = 1.0
@@ -777,30 +790,42 @@ def rectangular_mask(size=(128, 128), sigma=None):
     return mask
 
 
-def ellipse_mask(size=(128, 128), radius1=32, radius2=32, sigma=3):
-    x = size[0]
-    y = size[1]
-    img = Image.new('I', size=(y,x))
-    draw = ImageDraw.Draw(img)
-    draw.ellipse((x / 2 - radius1, y / 2 - radius2, x / 2 + radius1, y / 2 + radius2), fill='white', outline='white')
-    tmp = np.array(img, float) / 255
-    if sigma > 0:
-        mask = ndi.filters.gaussian_filter(tmp, sigma=sigma)
-    else:
-        mask = tmp
-    return mask
+def filter_image_in_fourier_space(image, low_pass, high_pass, sigma,
+                                  rect_mask=None, plot=False, title=''):
+    if rect_mask:
+        image = image * rect_mask
+    bandpass = bandpass_mask(size=image.shape, low_pass=low_pass, high_pass=high_pass, sigma=sigma)
+    img_ft = fftpack.fftshift(fftpack.fft2(image))
+    img_ft_filtered = img_ft * bandpass
+    img_filtered = np.abs(
+        (fftpack.ifft2(img_ft_filtered))
+    )
+    if plot:
+        fig = plt.figure(figsize=(16, 12))
+        fig.suptitle(title, fontsize=16)
+        ax1 = plt.subplot(2, 2, 1)
+        ax2 = plt.subplot(2, 2, 2, sharex=ax1, sharey=ax1)
+        ax3 = plt.subplot(2, 2, 3)
+        ax4 = plt.subplot(2, 2, 4, sharex=ax3, sharey=ax3)
+        #
+        ax1.imshow(image, cmap='gray')
+        ax1.set_axis_off()
+        ax1.set_title('original image')
+        #
+        ax2.imshow(img_filtered, cmap='gray')
+        ax2.set_axis_off()
+        ax2.set_title(f'filtered image {low_pass},{high_pass},{sigma}')
+        #
+        ax3.imshow(np.log( np.abs(img_ft) ), cmap='jet')
+        ax3.set_axis_off()
+        ax3.set_title(f'Fourier transform')
+        #
+        ax4.imshow(bandpass * np.log( np.abs(img_ft) ), cmap='jet')
+        ax4.set_axis_off()
+        ax4.set_title(f'bandpass')
 
+    return img_filtered, img_ft, bandpass
 
-def bandpass_mask(size=(128, 128), low_pass=32, high_pass=2, sigma=3):
-    x = size[1]
-    y = size[0]
-    lowpass = circ_mask(size=(x,y), radius=low_pass, sigma=0)
-    highpass = circ_mask(size=(x,y), radius=high_pass, sigma=0)
-    highpass = -1 * (highpass - 1)
-    bandpass = lowpass * highpass
-    if sigma > 0:
-        bandpass = ndi.filters.gaussian_filter(bandpass, sigma=sigma)
-    return bandpass
 
 
 def crosscorrelation(img1, img2, filter='no', *args, **kwargs):
@@ -845,25 +870,23 @@ def crosscorrelation(img1, img2, filter='no', *args, **kwargs):
 
 
 
-def shift_from_crosscorrelation_simple_images(img1, img2, low_pass=256, high_pass=22, sigma=2):
-    img1_norm = normalise(img1)
-    img2_norm = normalise(img2)
-    xcorr = crosscorrelation(img1_norm, img2_norm, filter='yes',
+def shift_from_crosscorrelation_simple_images(ref_image, offset_image, filter='yes',
+                                              low_pass=256, high_pass=22, sigma=3):
+    ref_image_norm = normalise(ref_image)
+    offset_image_norm = normalise(offset_image)
+    xcorr = crosscorrelation(ref_image_norm, offset_image_norm, filter=filter,
                              low_pass=low_pass,
                              high_pass=high_pass,
                              sigma=sigma)
     maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
-    print('\n', maxX, maxY)
     cen = np.asarray(xcorr.shape) / 2
-    shift = np.array(cen - [maxX, maxY], int)
-    print('centre = ', cen)
+    shift = -1 * np.array(cen - [maxX, maxY], int)
     print("Shift between 1 and 2 is = " + str(shift))
-    print("img2 is X-shifted by ", shift[1], '; Y-shifted by ', shift[0])
     return shift
 
 
 
-def subpixel_shift_from_crosscorrelation(ref_image, offset_image, upsample_factor=100):
+def pixel_shift_from_phase_cross_correlation(ref_image, offset_image):
     # pixel precision
     try:
         ref_image = ref_image.data
@@ -871,13 +894,24 @@ def subpixel_shift_from_crosscorrelation(ref_image, offset_image, upsample_facto
     except:
         ref_image = ref_image
         offset_image = offset_image
+
     shift, error, diffphase = phase_cross_correlation(ref_image, offset_image)
     image_product = np.fft.fft2(ref_image) * np.fft.fft2(offset_image).conj()
     cc_image = np.fft.fftshift(np.fft.ifft2(image_product))
     cc_image = cc_image.real
     print(f'Detected pixel offset (y, x): {shift}')
+    return shift
 
+
+def subpixel_shift_from_crosscorrelation(ref_image, offset_image, upsample_factor=100):
     # subpixel precision
+    try:
+        ref_image = ref_image.data
+        offset_image = offset_image.date
+    except:
+        ref_image = ref_image
+        offset_image = offset_image
+
     shift, error, diffphase = phase_cross_correlation(ref_image, offset_image,
                                                       upsample_factor=upsample_factor)
     print(f'Detected subpixel offset (y, x): {shift}')

@@ -163,14 +163,14 @@ class Microscope():
             return (position.x, position.y, position.z,
                     position.t, position.r)
         except Exception as e:
-            print('demo mode, error {e}, simulated coordinates are:')
+            print(f'demo mode, error {e}, simulated coordinates are:')
             #[x, y, z, t, r] = np.random.randint( 0,5, [5,1] ).astype(float)
             [x, y, z, t, r] = np.random.rand(5, 1)
             MicroscopeState.update_stage_position(self.microscope_state,
-                                                  x=x[0], y=y[0], z=z[0],
+                                                  x=x[0]*1e-3, y=y[0]*1e-3, z=z[0]*1e-3,
                                                   t=t[0], r=r[0])
             print(MicroscopeState.get_stage_position(self.microscope_state))
-            return (x[0], y[0], z[0], t[0], r[0])
+            return (x[0]*1e-3, y[0]*1e-3, z[0]*1e-3, t[0], r[0])
 
 
     def move_stage(self, x=0, y=0, z=0, r=0, t=0,
@@ -225,6 +225,7 @@ class Microscope():
                 """Absolute value of the scan rotation"""
                 self.microscope.beams.electron_beam.scanning.rotation.value = rotation_angle
 
+            self._get_current_microscope_state()
             return np.rad2deg(self.microscope.beams.electron_beam_beam.scanning.rotation.value)
 
         except Exception as e:
@@ -232,29 +233,22 @@ class Microscope():
             return rotation_angle
 
 
-    def beam_shift_alignment(self,
-                             ref_image,
-                             image,
-                             reduced_area,
-    ) -> None:
-        """Align the images by adjusting the beam shift, instead of moving the stage
-                (increased precision, lower range)
+    def set_beam_shift(self,
+                       beam_shift_x : float = 0.0,
+                       beam_shift_y : float = 0.0,
+                       ) -> None:
+        """Adjusting the beam shift
         Args:
-            ref_image (AdornedImage): reference image to align to
-            reduced_area (Rectangle): The reduced area to image with.
+            beam_shift_x: in metres, shift along x-axis
+            beam_shift_y: in metres, shift along y-axis
+        Returns
+        -------
+        None. Update the microscope state with the new beam shift values
         """
-        # # align using cross correlation
-        shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,
-                                                                 offset_image=image,
-                                                                 upsample_factor=100)
-        shift = movement.pixel_to_realspace_coordinate(coord=shift,
-                                                       image=ref_image)
-        dx = shift[1]
-        dy = shift[0]
-
         # adjust beamshift
         try:
-            microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
+            self.microscope.beams.ion_beam.beam_shift.value = Point(beam_shift_x, beam_shift_y)
+            self._get_current_microscope_state()
         except Exception as e:
             print(f"Could not apply beam shift, error {e}")
 
@@ -267,10 +261,69 @@ class Microscope():
         # logging.info(
         #     f"reseting ebeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value} "
         # )
-        print(f"reseting e-beam shift to (0, 0) from: {self.microscope.beams.electron_beam.beam_shift.value}")
-        microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+        try:
+            print(f"reseting e-beam shift to (0, 0) from: {self.microscope.beams.electron_beam.beam_shift.value}")
+            microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+        except Exception as e:
+            print(f"Could not reset the beam shift, error {e}")
         print(f"reset beam shifts to zero complete")
+        self._get_current_microscope_state()
         # logging.info(f"reset beam shifts to zero complete")
+
+
+    def beam_shift_alignment(self,
+                             ref_image,
+                             image,
+                             reduced_area=None,
+                             mode='crosscorrelation'
+    ) -> list:
+        """Align the images by adjusting the beam shift, instead of moving the stage
+                (increased precision, lower range)
+        Args:
+            ref_image (AdornedImage): reference image to align to
+            image: shifted image
+            reduced_area (Rectangle): The reduced area to image with.
+            mode: type of alignment (crosscorrelation, phase, phase_subpixel)
+            crosscorrelation seems to work with noisy images, where phase correlation fails
+            but phase correlation give sub-pixel precision
+        Returns:
+            shift: list of offset coordinates
+        """
+        rect_mask = correlation.rectangular_mask(size=ref_image.shape, sigma=20)
+        low_pass = int(max(ref_image.data.shape) / 6)  # =128 worked for 768x512
+        high_pass = int(max(ref_image.data.shape) / 64) # =12 worked for 768x512
+        sigma = 3
+
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image * rect_mask,
+                                                                      offset_image=image * rect_mask,
+                                                                      filter='yes',
+                                                                      low_pass=low_pass,
+                                                                      high_pass=high_pass,
+                                                                      sigma=sigma
+                                                                      )
+        """ check that the shift is not too large e.g. due to the cross-correlation failure
+            set the shift values to zero if the shift is larger than the quarter of the 
+            corresponding (hor,ver) field width
+        """
+        if (abs(shift) > np.array(ref_image.shape) / 4).any():
+            print('Something went wrong with the cross-correlation, the shift is larger than quarter field width\n'
+                  'Setting the beam shifts to zero')
+            shift = shift * 0
+
+        """ convert pixels to metres """
+        shift = movement.pixel_to_realspace_coordinate(coord=shift, image=ref_image)
+        dx = shift[1]
+        dy = shift[0]
+
+        """ adjust the beamshift """
+        # TODO check the syntax +=(-dy, dx) or +=Point(-dx,dy)
+        try:
+            self.microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
+            self._get_current_microscope_state()
+        except Exception as e:
+            print(f"Could not apply beam shift, error {e}")
+
+        return shift
 
 
 

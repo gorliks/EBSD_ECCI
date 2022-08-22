@@ -97,6 +97,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_collect_stack.clicked.connect(lambda: self.collect_stack())
         self.comboBox_move_type.currentTextChanged.connect(lambda: self._change_of_move_type())
         self.pushButton_update_SEM_state.clicked.connect(lambda: self.update_SEM_state())
+        self.pushButton_set_beam_shift.clicked.connect(lambda: self.set_beam_shift())
+        self.pushButton_reset_beam_shift.clicked.connect(lambda: self.reset_beam_shift())
         #
         self.pushButton_correlation.clicked.connect(lambda: self.test_correlation())
         self.pushButton_open_file.clicked.connect(lambda: self._open_file())
@@ -232,12 +234,13 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.doubleSpinBox_beam_current.setValue(self.microscope.microscope_state.beam_current / 1e-9)
         self.doubleSpinBox_brightness.setValue(self.microscope.microscope_state.brightness)
 
-        self.spinBox_horizontal_field_width.setValue(self.microscope.microscope_state.horizontal_field_width / 1e-6)
+        self.spinBox_horizontal_field_width.setValue(
+            self.microscope.microscope_state.horizontal_field_width / 1e-6 )
         self.doubleSpinBox_scan_rotation.setValue(
             np.rad2deg(self.microscope.microscope_state.scan_rotation_angle)
         )
-        self.doubleSpinBox_beam_shift_x.setValue(self.microscope.microscope_state.beam_shift_x)
-        self.doubleSpinBox_beam_shift_y.setValue(self.microscope.microscope_state.beam_shift_y)
+        self.doubleSpinBox_beam_shift_x.setValue(self.microscope.microscope_state.beam_shift_x / 1e-6)
+        self.doubleSpinBox_beam_shift_y.setValue(self.microscope.microscope_state.beam_shift_y / 1e-6)
 
 
 
@@ -245,6 +248,16 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         rotation_angle = self.doubleSpinBox_scan_rotation.value()
         rotation_angle = np.deg2rad(rotation_angle)
         self.microscope.set_scan_rotation(rotation_angle=rotation_angle)
+
+
+    def set_beam_shift(self):
+        beam_shift_x = self.doubleSpinBox_beam_shift_x.value() * 1e-6
+        beam_shift_y = self.doubleSpinBox_beam_shift_y.value() * 1e-6
+        self.microscope.set_beam_shift(beam_shift_x=beam_shift_x,
+                                       beam_shift_y=beam_shift_y)
+
+    def reset_beam_shift(self):
+        self.microscope.reset_beam_shifts()
 
     ##########################################################################################
 
@@ -328,6 +341,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             print(coords)
             self.doubleSpinBox_point_x.setValue(coords[0])
             self.doubleSpinBox_point_y.setValue(coords[1])
+
+            if event.dblclick:
+                self.doubleSpinBox_double_click_point_x.setValue(coords[0])
+                self.doubleSpinBox_double_click_point_y.setValue(coords[1])
 
         self.figure_SEM.canvas.mpl_connect("button_press_event", on_click)
 
@@ -417,7 +434,9 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                        move_type="Relative")
 
         def _run_loop():
+            previous_image = None
             counter = 0
+
             for ii in range(Nx):
                 self.label_x.setText(f"{ii + 1} of")
                 if Nx >= 3: self.microscope.move_stage(x=self.stack_settings.dx,
@@ -459,8 +478,20 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
                                 """update_display is called inside acquire_image"""
                                 image = self.acquire_image()
-
                                 utils.save_image(image, path=self.stack_dir, file_name=file_name)
+
+
+                                """Take an image and correct the drift, No need to correct the first image"""
+                                if counter>0 and self.checkBox_drif_correction.isChecked():
+                                    shift = self.microscope.beam_shift_alignment(ref_image=previous_image,
+                                                                                 image=image,
+                                                                                 mode='crosscorrelation')
+                                    """Take the aligned image"""
+                                    image = self.acquire_image()
+                                    utils.save_image(image, path=self.stack_dir, file_name='aligned_' + file_name)
+
+
+                                previous_image = np.copy(image)
 
                                 self.experiment_data = utils.populate_experiment_data_frame(
                                     data_frame=self.experiment_data,

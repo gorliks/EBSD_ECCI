@@ -689,8 +689,8 @@
         <widget class="QLabel" name="label_51">
          <property name="geometry">
           <rect>
-           <x>175</x>
-           <y>198</y>
+           <x>225</x>
+           <y>268</y>
            <width>81</width>
            <height>16</height>
           </rect>
@@ -702,8 +702,8 @@
         <widget class="QLabel" name="label_52">
          <property name="geometry">
           <rect>
-           <x>260</x>
-           <y>220</y>
+           <x>310</x>
+           <y>290</y>
            <width>31</width>
            <height>16</height>
           </rect>
@@ -715,8 +715,8 @@
         <widget class="QDoubleSpinBox" name="doubleSpinBox_scan_rotation">
          <property name="geometry">
           <rect>
-           <x>175</x>
-           <y>218</y>
+           <x>225</x>
+           <y>288</y>
            <width>80</width>
            <height>22</height>
           </rect>
@@ -731,14 +731,98 @@
         <widget class="QPushButton" name="pushButton_set_scan_rotation">
          <property name="geometry">
           <rect>
-           <x>170</x>
-           <y>240</y>
+           <x>220</x>
+           <y>310</y>
            <width>131</width>
            <height>31</height>
           </rect>
          </property>
          <property name="text">
           <string>Set scan rotation</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_30">
+         <property name="geometry">
+          <rect>
+           <x>290</x>
+           <y>370</y>
+           <width>101</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Beam shift y, µm</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_shift_y">
+         <property name="geometry">
+          <rect>
+           <x>290</x>
+           <y>390</y>
+           <width>80</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <double>-1000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_shift_x">
+         <property name="geometry">
+          <rect>
+           <x>180</x>
+           <y>390</y>
+           <width>80</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <double>-1000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_22">
+         <property name="geometry">
+          <rect>
+           <x>180</x>
+           <y>370</y>
+           <width>101</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Beam shift x, µm</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_set_beam_shift">
+         <property name="geometry">
+          <rect>
+           <x>170</x>
+           <y>420</y>
+           <width>101</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Set beam shift</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_reset_beam_shift">
+         <property name="geometry">
+          <rect>
+           <x>280</x>
+           <y>420</y>
+           <width>101</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Reset</string>
          </property>
         </widget>
        </widget>
@@ -1444,6 +1528,28 @@
           <string/>
          </property>
         </widget>
+        <widget class="QCheckBox" name="checkBox_drif_correction">
+         <property name="geometry">
+          <rect>
+           <x>110</x>
+           <y>400</y>
+           <width>131</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>drift correction</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
        </widget>
        <widget class="QWidget" name="Settings">
         <attribute name="title">
@@ -1609,7 +1715,7 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>330</y>
+           <y>260</y>
            <width>181</width>
            <height>24</height>
           </rect>
@@ -1719,62 +1825,17 @@
           <string>192.168.0.1</string>
          </property>
         </widget>
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_shift_x">
+        <widget class="QPushButton" name="pushButton_correlation">
          <property name="geometry">
           <rect>
-           <x>110</x>
-           <y>260</y>
-           <width>80</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="minimum">
-          <double>-1000.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_22">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>260</y>
-           <width>101</width>
-           <height>16</height>
+           <x>280</x>
+           <y>100</y>
+           <width>131</width>
+           <height>28</height>
           </rect>
          </property>
          <property name="text">
-          <string>Beam shift x</string>
-         </property>
-        </widget>
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_shift_y">
-         <property name="geometry">
-          <rect>
-           <x>110</x>
-           <y>290</y>
-           <width>80</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="minimum">
-          <double>-1000.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_30">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>290</y>
-           <width>101</width>
-           <height>16</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Beam shift y</string>
+          <string>correlation test</string>
          </property>
         </widget>
        </widget>
@@ -2177,6 +2238,31 @@
           <number>5000</number>
          </property>
         </widget>
+        <widget class="QComboBox" name="comboBox_image_convention">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>350</y>
+           <width>131</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <item>
+          <property name="text">
+           <string>Raw data</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>EBSD convention</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>TEM convention</string>
+          </property>
+         </item>
+        </widget>
        </widget>
       </widget>
      </widget>
@@ -2273,37 +2359,12 @@
         <bool>true</bool>
        </property>
       </widget>
-      <widget class="QComboBox" name="comboBox_image_convention">
-       <property name="geometry">
-        <rect>
-         <x>630</x>
-         <y>550</y>
-         <width>131</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <item>
-        <property name="text">
-         <string>Raw data</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>EBSD convention</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>TEM convention</string>
-        </property>
-       </item>
-      </widget>
       <widget class="QDoubleSpinBox" name="doubleSpinBox_point_x">
        <property name="geometry">
         <rect>
-         <x>100</x>
+         <x>150</x>
          <y>580</y>
-         <width>121</width>
+         <width>91</width>
          <height>22</height>
         </rect>
        </property>
@@ -2317,9 +2378,9 @@
       <widget class="QDoubleSpinBox" name="doubleSpinBox_point_y">
        <property name="geometry">
         <rect>
-         <x>240</x>
+         <x>270</x>
          <y>580</y>
-         <width>121</width>
+         <width>91</width>
          <height>22</height>
         </rect>
        </property>
@@ -2335,7 +2396,7 @@
         <rect>
          <x>10</x>
          <y>575</y>
-         <width>201</width>
+         <width>141</width>
          <height>31</height>
         </rect>
        </property>
@@ -2350,43 +2411,11 @@
         <string>selected point</string>
        </property>
       </widget>
-      <widget class="QLabel" name="label_7">
-       <property name="geometry">
-        <rect>
-         <x>740</x>
-         <y>580</y>
-         <width>20</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial Black</family>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>×</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_correlation">
-       <property name="geometry">
-        <rect>
-         <x>400</x>
-         <y>580</y>
-         <width>131</width>
-         <height>28</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>correlation test</string>
-       </property>
-      </widget>
       <widget class="QPushButton" name="pushButton_open_file">
        <property name="geometry">
         <rect>
-         <x>530</x>
-         <y>550</y>
+         <x>670</x>
+         <y>540</y>
          <width>93</width>
          <height>25</height>
         </rect>
@@ -2437,6 +2466,58 @@
         <string>nm</string>
        </property>
       </widget>
+      <widget class="QLabel" name="label_37">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>605</y>
+         <width>141</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>double click</string>
+       </property>
+      </widget>
+      <widget class="QDoubleSpinBox" name="doubleSpinBox_double_click_point_y">
+       <property name="geometry">
+        <rect>
+         <x>270</x>
+         <y>610</y>
+         <width>91</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <double>-1000000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+      </widget>
+      <widget class="QDoubleSpinBox" name="doubleSpinBox_double_click_point_x">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>610</y>
+         <width>91</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <double>-1000000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -2447,7 +2528,7 @@
      <x>0</x>
      <y>0</y>
      <width>1278</width>
-     <height>24</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

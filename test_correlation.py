@@ -26,268 +26,199 @@ import correlation
 reload(correlation)
 
 
-if 0:
-    image1 = correlation.load_image("01_tilted.tif")
-    image2 = correlation.load_image("02_flat.tif")
-    image3 = correlation.load_image("02_flat_shifted.tif")
+def test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_subpixel',
+                                         filter='yes', low_pass = 128, high_pass=5, sigma=3,
+                                         rect_mask=None,
+                                         plot=False, title=''):
+    rect_mask = np.array(rect_mask)
+    if rect_mask.any():
+        ref_image = ref_image * rect_mask
+        offset_image = offset_image * rect_mask
 
-
-    ref_image = image2
-    offset_image = image3
-
-    shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,
-                                                          offset_image=offset_image,
-                                                          upsample_factor=1000)
-    aligned = correlation.correct_image_by_shift(offset_image, shift)
-
-    overlayed = correlation.overlay_images(aligned, ref_image)
-
-    fig = plt.figure(figsize=(8, 3))
-    fig.suptitle('Subpixel cross-correlation', fontsize=16)
-    ax1 = plt.subplot(1, 3, 1)
-    ax2 = plt.subplot(1, 3, 2, sharex=ax1, sharey=ax1)
-    ax3 = plt.subplot(1, 3, 3, sharex=ax2, sharey=ax2)
-
-    ax1.imshow(ref_image, cmap='gray')
-    ax1.set_axis_off()
-    ax1.set_title('Reference image')
-
-    ax2.imshow(aligned, cmap='gray')
-    ax2.set_axis_off()
-    ax2.set_title('aligned')
-
-    ax3.imshow(overlayed)
-    ax3.set_axis_off()
-    ax3.set_title("overlayed")
-
-
-#########################################################################################
-#### unpack the black box, access to more parameters in the cross-correlation parameters
-#########################################################################################
-if 0:
-    DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
-    DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
-    DIR_rotations_scanRotCorrection = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_SRcorrected_220817.095914'
-
-    TYPE = 'SHIFTS'
-
-    if TYPE=='SHIFTS':
-        DIR = DIR_shifts
-        images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
-        i = 12
-        ref_image = correlation.load_image(images[i])
-        offset_image = correlation.load_image(images[i+3])
-        ref_image = correlation.normalise(ref_image)
-        offset_image = correlation.normalise(offset_image)
-        lowpass_pixels = int(max(offset_image.data.shape) / 12)  # =128 @ 1536x1024, good for e-beam images
-        highpass_pixels = int(max(offset_image.data.shape) / 256)  # =6   @ 1536x1024, good for e-beam images
-        sigma = int(2 * max(offset_image.data.shape) / 1536)  # =2   @ 1536x1024, good for e-beam images
-        lowpass_pixels = 100
-        highpass_pixels = 4
-        sigma = 5
-
+    if type=='crosscorrelation':
+        shift = correlation.shift_from_crosscorrelation_simple_images(img1=ref_image, img2=offset_image,
+                                                                      filter=filter,
+                                                                      low_pass=low_pass, high_pass=high_pass, sigma=sigma)
+    elif type=='phase':
+        shift = correlation.pixel_shift_from_phase_cross_correlation(ref_image=ref_image,
+                                                                     offset_image=offset_image)
+    elif type=='phase_subpixel':
+        shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,offset_image=offset_image,
+                                                                 upsample_factor=100)
     else:
-        DIR = DIR_rotations_scanRotCorrection
-        images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
-        i = 11
-        ref_image = correlation.load_image(images[i])
-        offset_image = correlation.load_image(images[i+1])
-        lowpass_pixels = 100
-        highpass_pixels = 4
-        sigma = 5
+        shift = correlation.shift_from_crosscorrelation_simple_images(img1=ref_image, img2=offset_image,
+                                                                      filter=filter,
+                                                                      low_pass=low_pass, high_pass=high_pass,
+                                                                      sigma=sigma)
+
+    aligned = correlation.correct_image_by_shift(offset_image, shift=shift)
+
+
+    if plot:
+        fig = plt.figure(figsize=(16, 6))
+        fig.suptitle(title + f"\n lowpass {low_pass}, highpass {high_pass}, sigma {sigma}"
+                     f"\n {shift}", fontsize=16)
+        ax1 = plt.subplot(1, 3, 1)
+        ax2 = plt.subplot(1, 3, 2, sharex=ax1, sharey=ax1)
+        ax3 = plt.subplot(1, 3, 3, sharex=ax2, sharey=ax2)
+
+        ax1.imshow(ref_image, cmap='gray')
+        ax1.set_axis_off()
+        ax1.set_title('previous image ref')
+
+        ax2.imshow(ref_image, cmap='Blues_r', alpha=1)
+        ax2.imshow(offset_image, cmap='Oranges_r', alpha=0.5)
+        ax2.set_axis_off()
+        ax2.set_title('next image overlayed with previous')
+
+        ax3.imshow(ref_image, cmap='Blues_r', alpha=1)
+        ax3.imshow(aligned, cmap='Oranges_r', alpha=0.5)
+        ax3.set_axis_off()
+        ax3.set_title("aligned overlayed")
+
+    return shift, aligned
 
 
 
-    xcorr = correlation.crosscorrelation(ref_image, offset_image, filter="yes",
-                                         low_pass=lowpass_pixels,
-                                         high_pass=highpass_pixels,
-                                         sigma=sigma)
-
-    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
-    print('\n', maxX, maxY)
-    cen = np.asarray(xcorr.shape) / 2
-    shift = -1 * np.array(cen - [maxX, maxY], int)
-    print("Shift between 1 and 2 is = " + str(shift))
-
-
-    aligned = correlation.correct_image_by_shift(offset_image, shift)
-
-
-    fig = plt.figure(figsize=(16, 6))
-    fig.suptitle('rotations (scan rot corrected) cross-correlation', fontsize=16)
-    ax1 = plt.subplot(1, 3, 1)
-    ax2 = plt.subplot(1, 3, 2, sharex=ax1, sharey=ax1)
-    ax3 = plt.subplot(1, 3, 3, sharex=ax2, sharey=ax2)
-
-    ax1.imshow(ref_image, cmap='gray')
-    ax1.set_axis_off()
-    ax1.set_title('previous image ref')
-
-    ax2.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax2.imshow(offset_image, cmap='Oranges_r', alpha=0.5)
-    ax2.set_axis_off()
-    ax2.set_title('next image overlay')
-
-    ax3.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax3.imshow(aligned, cmap='Oranges_r', alpha=0.5)
-    ax3.set_axis_off()
-    ax3.set_title("aligned overlayed")
-
-
-
-####################################################################################################
-####################################################################################################
-####################################################################################################
-if 0:
-    DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
-    DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
-    DIR = DIR_shifts
-    images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
-    i = 12
-
-
-    ref_image = correlation.load_image(images[i])
-    offset_image = correlation.load_image(images[i+1])
-
-    shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,
-                                                          offset_image=offset_image,
-                                                          upsample_factor=1000)
-    aligned = correlation.correct_image_by_shift(offset_image, shift)
-
-    fig = plt.figure(figsize=(16, 6))
-    fig.suptitle('subpixel cross-correlation, z-scan', fontsize=16)
-    ax1 = plt.subplot(1, 3, 1)
-    ax2 = plt.subplot(1, 3, 2, sharex=ax1, sharey=ax1)
-    ax3 = plt.subplot(1, 3, 3, sharex=ax2, sharey=ax2)
-
-    ax1.imshow(ref_image, cmap='gray')
-    ax1.set_axis_off()
-    ax1.set_title('previous image ref')
-
-    ax2.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax2.imshow(offset_image, cmap='Oranges_r', alpha=0.5)
-    ax2.set_axis_off()
-    ax2.set_title('next image overlay')
-
-    ax3.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax3.imshow(aligned, cmap='Oranges_r', alpha=0.5)
-    ax3.set_axis_off()
-    ax3.set_title("aligned overlayed")
-
-
-
-
-####################################################################################################
-####################################################################################################
-####################################################################################################
-if 0:
-
-    DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
-    DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
-    DIR = DIR_rotations
-    images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
-    i = 21
-
-
-    ref_image = correlation.load_image(images[i])
-    offset_image = correlation.load_image(images[i+1])
-
-    shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,
-                                                          offset_image=offset_image,
-                                                          upsample_factor=1000)
-    aligned = correlation.correct_image_by_shift(offset_image, shift)
-
-    fig = plt.figure(figsize=(16, 6))
-    fig.suptitle('rotations cross-correlation', fontsize=16)
-    ax1 = plt.subplot(1, 3, 1)
-    ax2 = plt.subplot(1, 3, 2, sharex=ax1, sharey=ax1)
-    ax3 = plt.subplot(1, 3, 3, sharex=ax2, sharey=ax2)
-
-    ax1.imshow(ref_image, cmap='gray')
-    ax1.set_axis_off()
-    ax1.set_title('previous image ref')
-
-    ax2.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax2.imshow(offset_image, cmap='Oranges_r', alpha=0.5)
-    ax2.set_axis_off()
-    ax2.set_title('next image overlay')
-
-    ax3.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax3.imshow(aligned, cmap='Oranges_r', alpha=0.5)
-    ax3.set_axis_off()
-    ax3.set_title("aligned overlayed")
-
-
-
-
-####################################################################################################
-####################################################################################################
-####################################################################################################
+#########################################################################################
+#########################################################################################
+#########################################################################################
 
 if 1:
     DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
     DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
     DIR_rotations_scanRotCorrection = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_SRcorrected_220817.095914'
-    # DIR = DIR_rotations_scanRotCorrection
-    # images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
-    # i = 11
-    # ref_image = correlation.load_image(images[i])
-    # offset_image = correlation.load_image(images[i+1])
 
 
     DIR = DIR_shifts
     images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
-    i = 12
-    ref_image = correlation.load_image(images[i])
-    offset_image = correlation.load_image(images[i+3])
+    i = 0
+    di = 1
 
-    # shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,
-    #                                                       offset_image=offset_image,
-    #                                                       upsample_factor=1000)
-    # shift_2 = correlation.shift_from_crosscorrelation_simple_images(img1=ref_image,
-    #                                                                 img2=offset_image,
-    #                                                                 low_pass=128,
-    #                                                                 high_pass=11,
-    #                                                                 sigma=2)
+    ref_image = correlation.load_image(images[i])
+    offset_image = correlation.load_image(images[i+di])
 
     ref_image = correlation.normalise(ref_image)
     offset_image = correlation.normalise(offset_image)
 
-    lowpass_pixels = int(max(offset_image.data.shape) / 12)  # =128 @ 1536x1024, good for e-beam images
-    highpass_pixels = int(max(offset_image.data.shape) / 256)  # =6   @ 1536x1024, good for e-beam images
-    sigma = int(2 * max(offset_image.data.shape) / 1536)  # =2   @ 1536x1024, good for e-beam images
+    # low_pass = int(max(offset_image.data.shape) / 12)  # =128 @ 1536x1024, good for e-beam images
+    # high_pass = int(max(offset_image.data.shape) / 256)  # =6   @ 1536x1024, good for e-beam images
+    # sigma = int(3 * max(offset_image.data.shape) / 1536)  # ~2-3   @ 1536x1024, good for e-beam images
 
-    xcorr = correlation.crosscorrelation(ref_image, offset_image, filter="no",
-                                         low_pass=lowpass_pixels,
-                                         high_pass=highpass_pixels,
-                                         sigma=sigma)
-
-    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
-    print('\n', maxX, maxY)
-    cen = np.asarray(xcorr.shape) / 2
-    shift = -1 * np.array(cen - [maxX, maxY], int)
-    print("Shift between 1 and 2 is = " + str(shift))
+    # values that worked for rotated images and z-scan images
+    low_pass = int(max(offset_image.data.shape) / 6) # 128 worked for 768x512 also
+    high_pass = int(max(offset_image.data.shape) / 64)
+    sigma = 3
+    print(f'lowpass = {low_pass}, highpass = {high_pass}, sigma = {sigma}')
 
 
-    aligned = correlation.correct_image_by_shift(offset_image, shift)
+    rect_mask = correlation.rectangular_mask(size=offset_image.shape, sigma=20)
+
+    ref_image_filtered, _, _ = correlation.filter_image_in_fourier_space(image=ref_image * rect_mask,
+                                                                         low_pass=low_pass,
+                                                                         high_pass=high_pass,
+                                                                         sigma=sigma,
+                                                                         plot=False)
+    offset_image_filtered, _, _ = correlation.filter_image_in_fourier_space(image=offset_image * rect_mask,
+                                                                            low_pass=low_pass,
+                                                                            high_pass=high_pass,
+                                                                            sigma=sigma,
+                                                                            plot=True,
+                                                                            title=f"{DIR} \n"
+                                                                                  f"i1={i}, i2={i+di} \n"
+                                                                                  f"lowpass {low_pass}, highpass {high_pass}, sigma {sigma}")
 
 
-    fig = plt.figure(figsize=(16, 6))
-    fig.suptitle('rotations (scan rot corrected) cross-correlation', fontsize=16)
-    ax1 = plt.subplot(1, 3, 1)
-    ax2 = plt.subplot(1, 3, 2, sharex=ax1, sharey=ax1)
-    ax3 = plt.subplot(1, 3, 3, sharex=ax2, sharey=ax2)
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_subpixel',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=sigma,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Phase subpixel:')
 
-    ax1.imshow(ref_image, cmap='gray')
-    ax1.set_axis_off()
-    ax1.set_title('previous image ref')
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=sigma,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Phase:')
 
-    ax2.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax2.imshow(offset_image, cmap='Oranges_r', alpha=0.5)
-    ax2.set_axis_off()
-    ax2.set_title('next image overlay')
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='crosscorrelation',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=3,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Simple corr:')
 
-    ax3.imshow(ref_image, cmap='Blues_r', alpha=1)
-    ax3.imshow(aligned, cmap='Oranges_r', alpha=0.5)
-    ax3.set_axis_off()
-    ax3.set_title("aligned overlayed")
+
+
+
+
+
+
+#########################################################################################
+#########################################################################################
+#########################################################################################
+
+if 0:
+    DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
+    DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
+    DIR_rotations_scanRotCorrection = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_SRcorrected_220817.095914'
+
+
+    DIR = DIR_rotations_scanRotCorrection
+    images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
+    i = 5
+    di = 1
+
+    ref_image = correlation.load_image(images[i])
+    offset_image = correlation.load_image(images[i+di])
+
+    ref_image = correlation.normalise(ref_image)
+    offset_image = correlation.normalise(offset_image)
+
+    # low_pass = int(max(offset_image.data.shape) / 12)  # =128 @ 1536x1024, good for e-beam images
+    # high_pass = int(max(offset_image.data.shape) / 256)  # =6   @ 1536x1024, good for e-beam images
+    # sigma = int(3 * max(offset_image.data.shape) / 1536)  # ~2-3   @ 1536x1024, good for e-beam images
+
+    low_pass = int(max(offset_image.data.shape) / 6) # worked for 128 @768x512
+    high_pass = int(max(offset_image.data.shape) / 64) # # worked for 12 @768x512
+    sigma = 3
+    print(f'lowpass = {low_pass}, highpass = {high_pass}, sigma = {sigma}')
+
+
+    rect_mask = correlation.rectangular_mask(size=offset_image.shape, sigma=20)
+
+    ref_image_filtered, _, _ = correlation.filter_image_in_fourier_space(image=ref_image * rect_mask,
+                                                                         low_pass=low_pass,
+                                                                         high_pass=high_pass,
+                                                                         sigma=sigma,
+                                                                         plot=False)
+    offset_image_filtered, _, _ = correlation.filter_image_in_fourier_space(image=offset_image * rect_mask,
+                                                                            low_pass=low_pass,
+                                                                            high_pass=high_pass,
+                                                                            sigma=sigma,
+                                                                            plot=True,
+                                                                            title=f"{DIR} \n"
+                                                                                  f"i1={i}, i2={i+di} \n"
+                                                                                  f"lowpass {low_pass}, highpass {high_pass}, sigma {sigma}")
+
+
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_subpixel',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=sigma,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Phase subpixel:')
+
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=3,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Phase corr:')
+
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='simple',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=3,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Simple corr:')
+
+
+
+
