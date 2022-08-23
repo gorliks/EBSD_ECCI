@@ -54,7 +54,7 @@ def pixel_to_realspace_coordinate(coord: list, image) -> list:
 
     coord[1] = y_shape - coord[1]  # flip y-axis for relative coordinate system
     # reset origin to center
-    coord -= np.array([x_shape / 2, y_shape / 2]).astype(np.int32)
+    coord -= np.array([x_shape / 2, y_shape / 2]).astype(np.int64)
     realspace_coord = list(np.array(coord) * pixelsize_x)  # to real space
     return realspace_coord
 

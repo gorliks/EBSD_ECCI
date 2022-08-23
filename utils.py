@@ -150,6 +150,17 @@ def save_data_frame(data_frame : dict,
     d.to_csv(file_name)
 
 
+def extract_metadata_from_tif(path_to_file):
+    from PIL import Image
+    from PIL.TiffTags import TAGS
+
+    with Image.open(path_to_file) as img:
+        #[print(key, img.tag[key]) for key in img.tag.keys()]
+        metadata_dict = {key: img.tag[key] for key in img.tag.keys()}
+
+        return metadata_dict
+
+
 if __name__ == '__main__':
 
     keys = ('x', 'y', 'z', 't', 'r',
@@ -161,14 +172,28 @@ if __name__ == '__main__':
     experiment_data['file_name'] = []
     experiment_data['timestamp'] = []
     print(experiment_data)
-    experiment_data = populate_experiment_data_frame(data_frame=experiment_data,
-                                                     microscope_state=microscope.microscope_state,
-                                                     file_name='lalala', timestamp=current_timestamp(),
-                                                     keys=keys)
+    # experiment_data = populate_experiment_data_frame(data_frame=experiment_data,
+    #                                                  microscope_state=microscope.microscope_state,
+    #                                                  file_name='lalala', timestamp=current_timestamp(),
+    #                                                  keys=keys)
     print(experiment_data)
 
 
 
 
+    metadata_dict = extract_metadata_from_tif(path_to_file='01_tilted.tif')
 
+    metadata = metadata_dict[34682][0]
 
+    metadata = metadata.split('\r\n')
+    pairs = len(metadata)//2
+    # for ii in range(pairs):
+    #     print(metadata[2*ii], metadata[2*ii+1]  )
+
+    for ii in range(len(metadata)):
+        if 'Dwell' in metadata[ii]:
+            print(metadata[ii] )
+        if 'PixelWidth' in metadata[ii]:
+            print(metadata[ii])
+        if 'HorFieldsize' in metadata[ii]:
+            print(metadata[ii])

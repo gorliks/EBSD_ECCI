@@ -872,6 +872,12 @@ def crosscorrelation(img1, img2, filter='no', *args, **kwargs):
 
 def shift_from_crosscorrelation_simple_images(ref_image, offset_image, filter='yes',
                                               low_pass=256, high_pass=22, sigma=3):
+    try:
+        ref_image = ref_image.data
+        offset_image = offset_image.date
+    except:
+        ref_image = ref_image
+        offset_image = offset_image
     ref_image_norm    = normalise(ref_image)
     offset_image_norm = normalise(offset_image)
     xcorr = crosscorrelation(ref_image_norm, offset_image_norm,
@@ -942,62 +948,60 @@ def load_image(file_path):
 
 
 
+
 if __name__ == '__main__':
     image1 = load_image("01_tilted.tif")
     #image2 = load_image("02_flat.tif")
     #image3 = load_image("02_flat_shifted.tif")
 
 
+    ANGLE = 27.
+    points_rotate_about_x = rotate_about_x(points_on_flat_surface, ANGLE)
+    points_rotated = project_3d_point_to_xy(points_rotate_about_x)
+
+    plt.figure(31)
+    [plt.scatter(point[0],point[1], c='b') for point in points_on_flat_surface]
+    [plt.scatter(point[0],point[1], c='r') for point in points_rotated]
+    plt.title('matrix transform')
+
+    tform2 = skimage.transform.ProjectiveTransform()
+    tform2.estimate(points_on_flat_surface, points_rotated)
+    print(tform2)
+    image1_transform = apply_transform_projective(image1, tform2.inverse)
+    ####################
+    plt.figure(32)
+    plt.subplot(3, 1, 1)
+    plt.imshow(image1, cmap='gray')
+    plt.title('image_1')
+    plt.subplot(3, 1, 2)
+    plt.imshow(image1_transform, cmap='gray')
+    plt.title('image_1_transform')
+    plt.subplot(3, 1, 3)
+    plt.imshow(overlay_images(image1_transform, image2), cmap='gray')
+    plt.title('overlay')
 
 
 
-        ANGLE = 27.
-        points_rotate_about_x = rotate_about_x(points_on_flat_surface, ANGLE)
-        points_rotated = project_3d_point_to_xy(points_rotate_about_x)
+    plt.figure(30)
+    plt.subplot(2, 2, 1)
+    plt.imshow(image1, cmap='gray')
+    [plt.scatter(point[0],point[1]) for point in src]
+    plt.title('image_1')
 
-        plt.figure(31)
-        [plt.scatter(point[0],point[1], c='b') for point in points_on_flat_surface]
-        [plt.scatter(point[0],point[1], c='r') for point in points_rotated]
-        plt.title('matrix transform')
+    plt.subplot(2, 2, 2)
+    plt.imshow(image2, cmap='gray')
+    [plt.scatter(point[0],point[1]) for point in dst]
+    plt.title('image_2')
 
-        tform2 = skimage.transform.ProjectiveTransform()
-        tform2.estimate(points_on_flat_surface, points_rotated)
-        print(tform2)
-        image1_transform = apply_transform_projective(image1, tform2.inverse)
-        ####################
-        plt.figure(32)
-        plt.subplot(3, 1, 1)
-        plt.imshow(image1, cmap='gray')
-        plt.title('image_1')
-        plt.subplot(3, 1, 2)
-        plt.imshow(image1_transform, cmap='gray')
-        plt.title('image_1_transform')
-        plt.subplot(3, 1, 3)
-        plt.imshow(overlay_images(image1_transform, image2), cmap='gray')
-        plt.title('overlay')
+    plt.subplot(2, 2, 3)
+    plt.imshow(image1_aligned, cmap='gray')
+    plt.title('image_1 aligned')
 
+    plt.subplot(2, 2, 4)
+    plt.imshow(overlay, cmap='gray')
+    plt.title('overlay')
 
-
-        plt.figure(30)
-        plt.subplot(2, 2, 1)
-        plt.imshow(image1, cmap='gray')
-        [plt.scatter(point[0],point[1]) for point in src]
-        plt.title('image_1')
-
-        plt.subplot(2, 2, 2)
-        plt.imshow(image2, cmap='gray')
-        [plt.scatter(point[0],point[1]) for point in dst]
-        plt.title('image_2')
-
-        plt.subplot(2, 2, 3)
-        plt.imshow(image1_aligned, cmap='gray')
-        plt.title('image_1 aligned')
-
-        plt.subplot(2, 2, 4)
-        plt.imshow(overlay, cmap='gray')
-        plt.title('overlay')
-
-        plt.show()
+    plt.show()
 
 
 

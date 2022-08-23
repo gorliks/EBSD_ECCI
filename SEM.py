@@ -247,7 +247,7 @@ class Microscope():
         """
         # adjust beamshift
         try:
-            self.microscope.beams.ion_beam.beam_shift.value = Point(beam_shift_x, beam_shift_y)
+            self.microscope.beams.electron_beam.beam_shift.value = Point(beam_shift_x, beam_shift_y)
             self._get_current_microscope_state()
         except Exception as e:
             print(f"Could not apply beam shift, error {e}")
@@ -318,7 +318,7 @@ class Microscope():
         """ adjust the beamshift """
         # TODO check the syntax +=(-dy, dx) or +=Point(-dx,dy)
         try:
-            self.microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
+            self.microscope.beams.electron_beam.beam_shift.value += (-dx, dy)
             self._get_current_microscope_state()
         except Exception as e:
             print(f"Could not apply beam shift, error {e}")
