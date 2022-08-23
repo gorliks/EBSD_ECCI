@@ -872,9 +872,10 @@ def crosscorrelation(img1, img2, filter='no', *args, **kwargs):
 
 def shift_from_crosscorrelation_simple_images(ref_image, offset_image, filter='yes',
                                               low_pass=256, high_pass=22, sigma=3):
-    ref_image_norm = normalise(ref_image)
+    ref_image_norm    = normalise(ref_image)
     offset_image_norm = normalise(offset_image)
-    xcorr = crosscorrelation(ref_image_norm, offset_image_norm, filter=filter,
+    xcorr = crosscorrelation(ref_image_norm, offset_image_norm,
+                             filter=filter,
                              low_pass=low_pass,
                              high_pass=high_pass,
                              sigma=sigma)
@@ -948,114 +949,6 @@ if __name__ == '__main__':
 
 
 
-    if 0:
-        image1 = skimage.color.gray2rgb(image1)
-        image2 = skimage.color.gray2rgb(image2)
-        image1 = skimage.transform.resize(image1, image2.shape)
-
-        src = [[ 445.28349348,  713.83713241],
-               [ 330.83521061,  713.83713241],
-               [ 414.21895956,  860.98492467],
-               [ 523.76231602,  775.96620025],
-               [ 442.01354254,  975.43320754],
-               [ 482.88792928,  844.63516997],
-               [ 476.3480274,  1425.05146167],
-               [ 293.23077481,  849.54009638]]
-
-        dst = [[ 507.41256133,  727.96926583],
-               [ 296.50072575,  723.06433942],
-               [ 448.55344442,  878.38700903],
-               [ 646.38547624,  788.4633582 ],
-               [ 507.41256133,  984.66041455],
-               [ 572.81158011,  857.13232792],
-               [ 579.35148199, 1409.75403664],
-               [ 229.4667315,   868.57715621]]
-
-        src = np.array(src)
-        dst = np.array(dst)
-
-        src = np.flip(src, axis=1)
-        dst = np.flip(dst, axis=1)
-
-        tform = skimage.transform.ProjectiveTransform()
-        tform.estimate(src, dst)
-        print(tform)
-
-        image1_aligned = apply_transform_projective(image1, tform.inverse)
-
-        overlay = overlay_images(image1_aligned, image2)
-
-
-
-        # angle_x = np.deg2rad(0)
-        # angle_y = np.deg2rad(2)
-        # matrix = np.array([[-0.5, 0, 0],
-        #                   [0, -0.5, 0],
-        #                   [0, 0, 1]
-        #                    ])
-        # tform2 = skimage.transform.ProjectiveTransform(matrix=matrix)
-        # print(tform2)
-        # warped_image = skimage.transform.warp(image1, tform2.inverse)
-
-
-
-
-        def rotate_about_x(points, angle):
-            angle = np.deg2rad(angle)
-            # matrix = np.array([
-            #     [1 , 0 , 0],
-            #     [0 , np.cos(angle) , -np.sin(angle)],
-            #     [0 , np.sin(angle) , np.cos(angle)]
-            # ])
-            matrix = np.array([
-                [np.cos(angle) , 0 , np.sin(angle)],
-                [0 , 1 , 0],
-                [-np.sin(angle) , 0 , np.cos(angle)]
-            ])
-            points = np.array(points)
-            centre  = np.asarray((1024,1536)) / 2
-            points = points - centre
-            points_rot = np.zeros( (points.shape[0], points.shape[1]+1) )
-            points_rot = [[point[0],point[1],0] for point in points]
-            points_rot = [ np.dot(matrix,point) for point in points_rot ]
-            points_rot = np.array(points_rot)
-
-            centre = np.asarray((1024, 1536,0)) / 2
-            points_rot += centre
-            return points_rot
-
-        def project_3d_point_to_xy(points):
-            points_2d = np.zeros((points.shape[0], points.shape[1] - 1))
-            points_2d = [[point[0], point[1]] for point in points]
-            points_2d = np.array(points_2d)
-            return points_2d
-
-        points_on_flat_surface = np.array([
-            [0, 0],
-            [0, 256],
-            [0, 768],
-            [0, 1536],
-            [256, 0],
-            [256, 256],
-            [256, 512],
-            [256, 1024],
-            [256, 1536],
-            [512, 0],
-            [512, 256],
-            [512, 512],
-            [512, 1024],
-            [768, 0],
-            [768, 256],
-            [768, 512],
-            [768, 768],
-            [768, 1024],
-            [1024, 0],
-            [1024, 256],
-            [1024, 512],
-            [1024, 768],
-            [1024, 1024],
-            [1024, 1536]
-            ])
 
 
         ANGLE = 27.

@@ -36,7 +36,8 @@ def test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_su
         offset_image = offset_image * rect_mask
 
     if type=='crosscorrelation':
-        shift = correlation.shift_from_crosscorrelation_simple_images(img1=ref_image, img2=offset_image,
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image,
+                                                                      offset_image=offset_image,
                                                                       filter=filter,
                                                                       low_pass=low_pass, high_pass=high_pass, sigma=sigma)
     elif type=='phase':
@@ -46,7 +47,8 @@ def test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_su
         shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,offset_image=offset_image,
                                                                  upsample_factor=100)
     else:
-        shift = correlation.shift_from_crosscorrelation_simple_images(img1=ref_image, img2=offset_image,
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image,
+                                                                      offset_image=offset_image,
                                                                       filter=filter,
                                                                       low_pass=low_pass, high_pass=high_pass,
                                                                       sigma=sigma)
@@ -84,7 +86,7 @@ def test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_su
 #########################################################################################
 #########################################################################################
 
-if 1:
+if 0:
     DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
     DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
     DIR_rotations_scanRotCorrection = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_SRcorrected_220817.095914'
@@ -106,8 +108,8 @@ if 1:
     # sigma = int(3 * max(offset_image.data.shape) / 1536)  # ~2-3   @ 1536x1024, good for e-beam images
 
     # values that worked for rotated images and z-scan images
-    low_pass = int(max(offset_image.data.shape) / 6) # 128 worked for 768x512 also
-    high_pass = int(max(offset_image.data.shape) / 64)
+    low_pass = int(max(offset_image.data.shape) / 6) # =128 worked for @768x512
+    high_pass = int(max(offset_image.data.shape) / 64) # =12 worked for @768x512
     sigma = 3
     print(f'lowpass = {low_pass}, highpass = {high_pass}, sigma = {sigma}')
 
@@ -157,7 +159,7 @@ if 1:
 #########################################################################################
 #########################################################################################
 
-if 0:
+if 1:
     DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
     DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
     DIR_rotations_scanRotCorrection = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_SRcorrected_220817.095914'
@@ -178,8 +180,8 @@ if 0:
     # high_pass = int(max(offset_image.data.shape) / 256)  # =6   @ 1536x1024, good for e-beam images
     # sigma = int(3 * max(offset_image.data.shape) / 1536)  # ~2-3   @ 1536x1024, good for e-beam images
 
-    low_pass = int(max(offset_image.data.shape) / 6) # worked for 128 @768x512
-    high_pass = int(max(offset_image.data.shape) / 64) # # worked for 12 @768x512
+    low_pass = int(max(offset_image.data.shape) / 6) # =128 worked for @768x512
+    high_pass = int(max(offset_image.data.shape) / 64) # =12 worked for @768x512
     sigma = 3
     print(f'lowpass = {low_pass}, highpass = {high_pass}, sigma = {sigma}')
 
