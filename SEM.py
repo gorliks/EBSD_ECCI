@@ -7,6 +7,8 @@ try:
                                                              Rectangle,
                                                              RunAutoCbSettings,
                                                              Point)
+    from autoscript_sdb_microscope_client.enumerations import (
+                                                        CoordinateSystem)
 except:
     print('Autoscript module not found')
 
@@ -17,7 +19,11 @@ import utils
 import correlation
 from utils import MicroscopeState
 from utils import ImageSettings
+
 from importlib import reload  # Python 3.4+
+reload(movement)
+reload(correlation)
+reload(utils)
 
 
 from enum import Enum
@@ -53,6 +59,7 @@ class Microscope():
             #logging.info(f"Microscope client connecting to [{ip_address}]")
             self.microscope = SdbMicroscopeClient()
             self.microscope.connect(self.ip_address)
+            self.microscope.specimen.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
             #logging.info(f"Microscope client connected to [{ip_address}]")
         except Exception as e:
             print(f"AutoLiftout is unavailable. Unable to connect to microscope: {e}")
@@ -289,13 +296,14 @@ class Microscope():
         Returns:
             shift: list of offset coordinates
         """
-        rect_mask = correlation.rectangular_mask(size=ref_image.shape, sigma=20)
+        rect_mask = correlation.rectangular_mask(size=ref_image.data.shape,
+                                                 sigma=20)
         low_pass = int(max(ref_image.data.shape) / 6)  # =128 worked for 768x512
         high_pass = int(max(ref_image.data.shape) / 64) # =12 worked for 768x512
         sigma = 3
 
-        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image * rect_mask,
-                                                                      offset_image=image * rect_mask,
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image.data * rect_mask,
+                                                                      offset_image=image.data * rect_mask,
                                                                       filter='yes',
                                                                       low_pass=low_pass,
                                                                       high_pass=high_pass,
@@ -311,14 +319,14 @@ class Microscope():
             shift = shift * 0
 
         """ convert pixels to metres """
-        shift = movement.pixel_to_realspace_coordinate(coord=shift, image=ref_image)
+        shift = movement.pixels_to_metres(coord=shift, image=ref_image)
         dx = shift[1]
         dy = shift[0]
 
         """ adjust the beamshift """
         # TODO check the syntax +=(-dy, dx) or +=Point(-dx,dy)
         try:
-            self.microscope.beams.electron_beam.beam_shift.value += (-dx, dy)
+            self.microscope.beams.electron_beam.beam_shift.value += (dx, -dy)
             self._get_current_microscope_state()
         except Exception as e:
             print(f"Could not apply beam shift, error {e}")
@@ -355,7 +363,7 @@ class Microscope():
             self.microscope_state.resolution = self.microscope.beams.electron_beam.scanning.resolution.value
 
             self.microscope_state.hv = self.microscope.beams.electron_beam.high_voltage.value
-            self.microscope_state.beam_current = self.microscope.beams.electron_beam.beam_shift.value
+            self.microscope_state.beam_current = self.microscope.beams.electron_beam.beam_current.value
 
             self.microscope_state.scan_rotation_angle = \
                 self.microscope.beams.electron_beam.scanning.rotation.value

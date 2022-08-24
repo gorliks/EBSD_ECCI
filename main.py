@@ -233,6 +233,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.doubleSpinBox_high_voltage.setValue(self.microscope.microscope_state.hv)
         self.doubleSpinBox_beam_current.setValue(self.microscope.microscope_state.beam_current / 1e-9)
         self.doubleSpinBox_brightness.setValue(self.microscope.microscope_state.brightness)
+        self.doubleSpinBox_contrast.setValue(self.microscope.microscope_state.contrast)
 
         self.spinBox_horizontal_field_width.setValue(
             self.microscope.microscope_state.horizontal_field_width / 1e-6 )
@@ -451,23 +452,17 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                                                move_type="Relative")
                         for oo in range(Nt):
                             self.label_t.setText(f"{oo + 1} of")
-                            if Nt >= 2: self.microscope.move_stage(t=self.stack_settings.dt,
-                                                                   move_type="Relative")
+                            if Nt >= 2 and counter>0:
+                                self.microscope.move_stage(t=self.stack_settings.dt,
+                                                           move_type="Relative")
                             for qq in range(Nr):
-
-                                """update gui settings manually if the scan is long"""
-                                gui_settings = self.create_settings_dict()
                                 self.label_r.setText(f"{qq + 1} of")
-                                if Nr >= 2:
+                                if Nr >= 2 and counter>0:
                                     self.microscope.move_stage(r=self.stack_settings.dr,
                                                                move_type="Relative")
 
-                                """update the autocontrast setting for stack"""
-                                gui_settings["imaging"]["autocontrast"] = self.checkBox_autocontrast_stack.isChecked()
-                                # elf.microscope.autocontrast(quadrant=gui_settings["imaging"]["quadrant"])
-
                                 """correct stage rotation with scan rotation for image alignment"""
-                                if self.checkBox_scan_rotation_correction.isChecked():
+                                if self.checkBox_scan_rotation_correction.isChecked() and counter>0:
                                     self.microscope.set_scan_rotation(rotation_angle=-1*self.stack_settings.dr,
                                                                       type="Relative")
 
@@ -483,13 +478,15 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
                                 """Take an image and correct the drift, No need to correct the first image"""
                                 if counter>0 and self.checkBox_drif_correction.isChecked():
-                                    shift = self.microscope.beam_shift_alignment(ref_image=previous_image,
+                                    _shift_ = self.microscope.beam_shift_alignment(ref_image=previous_image,
                                                                                  image=image,
                                                                                  mode='crosscorrelation')
-                                    """Take the aligned image"""
-                                    image = self.acquire_image()
-                                    utils.save_image(image, path=self.stack_dir, file_name='aligned_' + file_name)
-
+                                    shift = movement.pixels_to_metres(_shift_, image)
+                                    print(f"calculated shift = {shift}")
+                                    # """Take the aligned image"""
+                                    # TODO execute beam shift correction
+                                    #image = self.acquire_image()
+                                    #utils.save_image(image, path=self.stack_dir, file_name='aligned_' + file_name)
 
                                 previous_image = np.copy(image)
 
@@ -508,6 +505,11 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                     print('Abort clicked')
                                     self._abort_clicked_status = False  # reinitialise back to False
                                     return
+
+                                """update gui settings manually if the scan is long"""
+                                gui_settings = self.create_settings_dict()
+                                """update the autocontrast setting for stack"""
+                                gui_settings["imaging"]["autocontrast"] = self.checkBox_autocontrast_stack.isChecked()
 
                                 counter += 1
 

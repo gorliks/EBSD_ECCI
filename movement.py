@@ -16,11 +16,11 @@ except Exception as e:
     demo = True
     print(f'demo mode, no Autoscript detected, exception {e}')
 
-from main import BeamType
+from utils import BeamType
 
 
 def pixel_to_realspace_coordinate(coord: list, image) -> list:
-    """Convert pixel image coordinate to real space coordinate.
+    """Convert pixel image coordniate to real space coordinate.
     This conversion deliberately ignores the nominal pixel size in y,
     as this can lead to inaccuracies if the sample is not flat in y.
     Parameters
@@ -57,6 +57,13 @@ def pixel_to_realspace_coordinate(coord: list, image) -> list:
     coord -= np.array([x_shape / 2, y_shape / 2]).astype(np.int64)
     realspace_coord = list(np.array(coord) * pixelsize_x)  # to real space
     return realspace_coord
+
+
+def pixels_to_metres(coord: list, image) -> list:
+    pixelsize_x = image.metadata.binary_result.pixel_size.x
+    pixelsize_y = image.metadata.binary_result.pixel_size.y
+    coord_metres = list(np.array(coord) * pixelsize_x)  # to real space
+    return coord_metres
 
 
 def move_relative(microscope,
