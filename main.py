@@ -207,8 +207,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         r = np.deg2rad(r)
         t = np.deg2rad(t)
         self.microscope.move_stage(x=x, y=y, z=z,
-                                   t=t, r=r,
-                                   compucentric=compucentric,
+                                   move_type=move_type)
+        self.microscope.rotate_stage(r=r,
+                                     move_type=move_type)
+        self.microscope.tilt_stage(t=t,
                                    move_type=move_type)
         self.microscope.update_stage_position()
 
@@ -453,19 +455,21 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                         for oo in range(Nt):
                             self.label_t.setText(f"{oo + 1} of")
                             if Nt >= 2 and counter>0:
-                                self.microscope.move_stage(t=self.stack_settings.dt,
+                                self.microscope.tilt_stage(t=self.stack_settings.dt,
                                                            move_type="Relative")
                             for qq in range(Nr):
                                 self.label_r.setText(f"{qq + 1} of")
                                 if Nr >= 2 and counter>0:
-                                    self.microscope.move_stage(r=self.stack_settings.dr,
-                                                               move_type="Relative")
+                                    self.microscope.rotate_stage(r=self.stack_settings.dr,
+                                                                 move_type="Relative")
+                                    """correct stage rotation with scan rotation for image alignment"""
+                                    if self.checkBox_scan_rotation_correction.isChecked() and counter > 0:
+                                        self.microscope.set_scan_rotation(rotation_angle=-1 * self.stack_settings.dr,
+                                                                          type="Relative")
 
-                                """correct stage rotation with scan rotation for image alignment"""
-                                if self.checkBox_scan_rotation_correction.isChecked() and counter>0:
-                                    self.microscope.set_scan_rotation(rotation_angle=-1*self.stack_settings.dr,
-                                                                      type="Relative")
-
+                                """
+                                    After all the movements are done, take images, save images, etc 
+                                """
                                 self.microscope._get_current_microscope_state()
 
                                 file_name = '%06d_' % counter + sample_name + '_' + \
@@ -479,16 +483,15 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                 """Take an image and correct the drift, No need to correct the first image"""
                                 if counter>0 and self.checkBox_drif_correction.isChecked():
                                     _shift_ = self.microscope.beam_shift_alignment(ref_image=previous_image,
-                                                                                 image=image,
-                                                                                 mode='crosscorrelation')
+                                                                                   image=image,
+                                                                                   mode='crosscorrelation')
                                     shift = movement.pixels_to_metres(_shift_, image)
-                                    print(f"calculated shift = {shift}")
                                     # """Take the aligned image"""
                                     # TODO execute beam shift correction
                                     #image = self.acquire_image()
                                     #utils.save_image(image, path=self.stack_dir, file_name='aligned_' + file_name)
 
-                                previous_image = np.copy(image)
+                                previous_image = utils.make_copy_of_Adorned_image(image)
 
                                 self.experiment_data = utils.populate_experiment_data_frame(
                                     data_frame=self.experiment_data,
@@ -535,7 +538,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def _update_stack_settings(self):
         print('uploading stack settings...')
-        print(self.stack_settings)
         self.stack_settings.x_range = self.doubleSpinBox_x_range.value() * 1e-6
         self.stack_settings.dx = self.doubleSpinBox_x_step.value() * 1e-6
         self.stack_settings.y_range = self.doubleSpinBox_y_range.value() * 1e-6

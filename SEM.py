@@ -180,39 +180,62 @@ class Microscope():
             return (x[0]*1e-3, y[0]*1e-3, z[0]*1e-3, t[0], r[0])
 
 
-    def move_stage(self, x=0, y=0, z=0, r=0, t=0,
-                   compucentric=True,
+    def move_stage(self, x=0, y=0, z=0,
                    move_type='Relative'):
         """ Two types of movement: relative and absolute
             Two coordinate systems: StagePosition(t=position.t, coordinate_system=position.coordinate_system)
             SPECIMEN: based on position of the specimen (link between Z and working distance)
             RAW: coordinate system based solely on stage hardware encoders
         """
-        if move_type=='Relative':
-            print('SEM: moving relative')
-            new_position = \
-                movement.move_relative(self.microscope,
-                                   dx=x, dy=y, dz=z,
-                                   dr=r, dt=t)
-            x, y, z, r, t = new_position[0], new_position[1], new_position[2], \
-                            new_position[3], new_position[4]
-            MicroscopeState.update_stage_position(self.microscope_state,
-                                                  x=x, y=y, z=z, r=r, t=t)
-            print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
+        print(f"moving SEM stage: {move_type}")
+        new_position = \
+            movement.move_stage(self.microscope,
+                                x=x, y=y, z=z,
+                                move_type=move_type)
+
+        x, y, z, r, t = new_position[0], new_position[1], new_position[2], \
+                        new_position[3], new_position[4]
+
+        MicroscopeState.update_stage_position(self.microscope_state,
+                                              x=x, y=y, z=z, r=r, t=t)
+        print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
 
 
-        if move_type=="Absolute":
-            print("moving SEM stage: absolute")
-            new_position = \
-                movement.move_absolute(self.microscope,
-                                       x=x, y=y, z=z,
-                                       t=t, r=r)
-            x, y, z, r, t = new_position[0], new_position[1], new_position[2], \
-                            new_position[3], new_position[4]
-            MicroscopeState.update_stage_position(self.microscope_state,
-                                                  x=x, y=y, z=z, r=r, t=t)
-            print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
 
+    def rotate_stage(self, r=0,  move_type='Relative'):
+        """ Two types of movement: relative and absolute
+            Two coordinate systems: StagePosition(t=position.t, coordinate_system=position.coordinate_system)
+            SPECIMEN: based on position of the specimen (link between Z and working distance)
+            RAW: coordinate system based solely on stage hardware encoders
+        """
+        print(f'SEM: rotating stage {move_type}')
+        new_position = \
+            movement.rotate_stage(self.microscope,
+                                  r=r,
+                                  move_type=move_type)
+        x, y, z, r, t = new_position[0], new_position[1], new_position[2], \
+                        new_position[3], new_position[4]
+        MicroscopeState.update_stage_position(self.microscope_state,
+                                              x=x, y=y, z=z, r=r, t=t)
+        print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
+
+
+    def tilt_stage(self, t=0,  move_type='Relative'):
+        """ Two types of movement: relative and absolute
+            Two coordinate systems: StagePosition(t=position.t, coordinate_system=position.coordinate_system)
+            SPECIMEN: based on position of the specimen (link between Z and working distance)
+            RAW: coordinate system based solely on stage hardware encoders
+        """
+        print(f'SEM: tilting stage {move_type}')
+        new_position = \
+            movement.tilt_stage(self.microscope,
+                                  t=t,
+                                  move_type=move_type)
+        x, y, z, r, t = new_position[0], new_position[1], new_position[2], \
+                        new_position[3], new_position[4]
+        MicroscopeState.update_stage_position(self.microscope_state,
+                                              x=x, y=y, z=z, r=r, t=t)
+        print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
 
 
     def set_scan_rotation(self, rotation_angle : float = 0, type="Absolute") -> float:
@@ -226,17 +249,37 @@ class Microscope():
         """
         try:
             if type=="Relative":
-                """Change the current scan rotation by the specified value"""
-                self.microscope.beams.electron_beam.scanning.rotation.value += rotation_angle
-            else:
+                """
+                    Change the current scan rotation by the specified value
+                    Check that targety scan_rot does not exceed (-2pi, +2pi)
+                    Otherwise divide module to stay within the (-2pi, +2pi) range
+                """
+                rot_min = self.microscope.beams.electron_beam.scanning.rotation.limits.min
+                rot_max = self.microscope.beams.electron_beam.scanning.rotation.limits.max
+
+                current_scan_rot = \
+                    self.microscope.beams.electron_beam.scanning.rotation.value
+
+                target_rot_angle = current_scan_rot + rotation_angle
+
+                if target_rot_angle >=rot_max:
+                    target_rot_angle = target_rot_angle % (2*np.pi)
+                elif target_rot_angle <=rot_min:
+                    target_rot_angle = target_rot_angle % (2 * np.pi)
+
+                print(f"setting scan rotation to {np.rad2deg(target_rot_angle)}")
+                self.microscope.beams.electron_beam.scanning.rotation.value = target_rot_angle
+
+
+            elif type=="Absolute":
                 """Absolute value of the scan rotation"""
                 self.microscope.beams.electron_beam.scanning.rotation.value = rotation_angle
 
             self._get_current_microscope_state()
-            return np.rad2deg(self.microscope.beams.electron_beam_beam.scanning.rotation.value)
+            return np.rad2deg(self.microscope.beams.electron_beam.scanning.rotation.value)
 
         except Exception as e:
-            print(f'demo mode, scan rotation {type} by {rotation_angle} deg, error {e}')
+            print(f'Scan rotation {type} by {np.rad2deg(rotation_angle)} deg, error {e}')
             return rotation_angle
 
 
@@ -270,7 +313,7 @@ class Microscope():
         # )
         try:
             print(f"reseting e-beam shift to (0, 0) from: {self.microscope.beams.electron_beam.beam_shift.value}")
-            microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+            self.microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
         except Exception as e:
             print(f"Could not reset the beam shift, error {e}")
         print(f"reset beam shifts to zero complete")
@@ -296,6 +339,7 @@ class Microscope():
         Returns:
             shift: list of offset coordinates
         """
+
         rect_mask = correlation.rectangular_mask(size=ref_image.data.shape,
                                                  sigma=20)
         low_pass = int(max(ref_image.data.shape) / 6)  # =128 worked for 768x512
@@ -313,7 +357,7 @@ class Microscope():
             set the shift values to zero if the shift is larger than the quarter of the 
             corresponding (hor,ver) field width
         """
-        if (abs(shift) > np.array(ref_image.shape) / 4).any():
+        if (abs(shift) > np.array(ref_image.data.shape) / 4).any():
             print('Something went wrong with the cross-correlation, the shift is larger than quarter field width\n'
                   'Setting the beam shifts to zero')
             shift = shift * 0
@@ -326,6 +370,7 @@ class Microscope():
         """ adjust the beamshift """
         # TODO check the syntax +=(-dy, dx) or +=Point(-dx,dy)
         try:
+            print(f"trying to apply beam shift correction {dx}, {-dy}")
             self.microscope.beams.electron_beam.beam_shift.value += (dx, -dy)
             self._get_current_microscope_state()
         except Exception as e:

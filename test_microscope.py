@@ -79,14 +79,12 @@ if __name__ == '__main__':
     """
     microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
 
-    dr = np.deg2rad(5)
-    new_stage_position = StagePosition(r=dr) #StagePosition(x=0, y=0, z=0, t=0, r=-dr)
-    stage_settings = MoveSettings(rotate_compucentric=True)
-    microscope.specimen.stage.relative_move(new_stage_position, stage_settings)
+    dwell_time = 3e-6
+    grab_frame_settings = GrabFrameSettings(dwell_time=dwell_time)
+    ref_image = microscope.imaging.grab_frame(grab_frame_settings)
 
-
-
-
+    MoveSettings(rotate_compucentric=True, tilt_compucentric=True)
+    #                              tilt_compucentric=True <-- Not supported
 
     if 0:
         dwell_time = 3e-6

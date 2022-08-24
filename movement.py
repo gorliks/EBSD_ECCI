@@ -66,45 +66,13 @@ def pixels_to_metres(coord: list, image) -> list:
     return coord_metres
 
 
-def move_relative(microscope,
-                  dx : float = 0,
-                  dy : float = 0,
-                  dz : float = 0,
-                  dt: float = 0,
-                  dr: float = 0,
-                  stage_settings : dict = None
-                  ):
-    """Move the stage to the desired position in a safe manner, using compucentric rotation.
-        Supports movements in the stage_position coordinate system
-        The units of movement are  metres
-        The units of supplied angles are radians
-    """
-    try:
-        """TODO !Compucentric tilt positioning option is not supported on this microscope!"""
-        stage = microscope.specimen.stage
-        stage_settings = MoveSettings(rotate_compucentric=True)
-        #                              tilt_compucentric=True <-- Not supported
-        new_stage_position = StagePosition(x=dx, y=dy, z=dz,
-                                           t=dt, r=dr)
-        stage.relative_move(new_stage_position, stage_settings)
-
-        position = stage.current_position
-        return (position.x, position.y, position.z,
-                position.t, position.r
-                )
-    except Exception as e:
-        print(f'error {e}: movement rel: Could not execute movement, demo mode')
-        return (5,5,5,5,5)
-
-
-def move_absolute(microscope,
-                  x : float = 0,
-                  y : float = 0,
-                  z : float = 0,
-                  t : float = 0,
-                  r : float = 0,
-                  stage_settings : dict = None
-                  ):
+def move_stage(microscope,
+               x : float = 0,
+               y : float = 0,
+               z : float = 0,
+               move_type='Relative',
+               stage_settings : dict = None
+               ):
     """Move the stage to the desired position in a safe manner, using compucentric rotation.
         Supports movements in the stage_position coordinate system
         The units of movement vector are in metres
@@ -115,35 +83,85 @@ def move_absolute(microscope,
         stage = microscope.specimen.stage
         stage_settings = MoveSettings(rotate_compucentric=True)
         #                              tilt_compucentric=True <-- Not supported
-        """First rotate, then move x,y,z and then tilt"""
-        """1. Rotate"""
-        stage.absolute_move(
-            StagePosition(r=r),
-            stage_settings
-        )
+        if move_type=="Absolute":
+            stage.absolute_move(StagePosition(x=x, y=y, z=z),
+                                stage_settings)
+        else:
+            stage.relative_move(StagePosition(x=x, y=y, z=z),
+                                stage_settings)
 
-        """2. Move x, y, z"""
-        stage.absolute_move(
-            StagePosition(x=x, y=y, z=z),
-            stage_settings
-        )
-
-        """3. Tilt"""
-        stage.absolute_move(
-            StagePosition(t=t),
-            stage_settings
-        )
         position = stage.current_position
+
         return (position.x, position.y, position.z,
-                position.t, position.r
-                )
+                position.t, position.r)
+
     except Exception as e:
         print(f'error {e}: movement abs: Could not execute movement, demo mode')
         return (5,5,5,5,5)
 
 
 
+def rotate_stage(microscope,
+                 r: float = 0,
+                 move_type : str = "Relative",
+                 stage_settings : dict = None
+                 ):
+    """Rotate the stage to the desired position in a safe manner, using compucentric rotation.
+        Supports movements in the stage_position coordinate system
+        The units of supplied angles are radians
+    """
+    try:
+        """TODO !Compucentric tilt positioning option is not supported on this microscope!"""
+        stage = microscope.specimen.stage
+        stage_settings = MoveSettings(rotate_compucentric=True)
+        new_stage_position = StagePosition(r=r)
 
+        if move_type=="Absolute":
+            stage.absolute_move(new_stage_position, stage_settings)
+        else:
+            stage.relative_move(new_stage_position, stage_settings)
+
+        position = stage.current_position
+
+        return (position.x, position.y, position.z,
+                position.t, position.r
+                )
+    except Exception as e:
+        print(f'error {e}: movement rel: Could not execute movement, demo mode')
+        return (5,5,5,5,5)
+
+
+
+def tilt_stage(microscope,
+                 t: float = 0,
+                 move_type : str = "Relative",
+                 stage_settings : dict = None
+                 ):
+    """ Tilt the stage to the desired position in a safe manner, using compucentric rotation.
+        Supports movements in the stage_position coordinate system
+        The units of supplied angles are radians
+    """
+    try:
+        """TODO !Compucentric tilt positioning option is not supported on this microscope!"""
+        stage = microscope.specimen.stage
+        #stage_settings = MoveSettings(tilt_compucentric=True)
+        stage_settings = MoveSettings(rotate_compucentric=True)
+
+        new_stage_position = StagePosition(t=t)
+
+        if move_type=="Absolute":
+            stage.absolute_move(new_stage_position, stage_settings)
+        else:
+            stage.relative_move(new_stage_position, stage_settings)
+
+        position = stage.current_position
+
+        return (position.x, position.y, position.z,
+                position.t, position.r
+                )
+    except Exception as e:
+        print(f'error {e}: movement rel: Could not execute movement, demo mode')
+        return (5,5,5,5,5)
 
 
 

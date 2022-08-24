@@ -7,6 +7,20 @@ from importlib import reload  # Python 3.4+
 from dataclasses import dataclass
 from enum import Enum
 
+
+try:
+    from autoscript_sdb_microscope_client import SdbMicroscopeClient
+    from autoscript_sdb_microscope_client.structures import (AdornedImage,
+                                                             GrabFrameSettings,
+                                                             Rectangle,
+                                                             RunAutoCbSettings,
+                                                             Point)
+    from autoscript_sdb_microscope_client.enumerations import (
+                                                        CoordinateSystem)
+except:
+    print('Autoscript module not found')
+
+
 class BeamType(Enum):
     ION = 'ION'
     ELECTRON = 'ELECTRON'
@@ -159,6 +173,15 @@ def extract_metadata_from_tif(path_to_file):
         metadata_dict = {key: img.tag[key] for key in img.tag.keys()}
 
         return metadata_dict
+
+
+def make_copy_of_Adorned_image(image : AdornedImage) -> AdornedImage:
+    copy = AdornedImage()
+    AdornedImage._AdornedImage__construct_from_data(copy,
+                                                    data=image.data)
+    copy.metadata = image.metadata
+    return copy
+
 
 
 if __name__ == '__main__':

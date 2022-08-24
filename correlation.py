@@ -870,7 +870,8 @@ def crosscorrelation(img1, img2, filter='no', *args, **kwargs):
 
 
 
-def shift_from_crosscorrelation_simple_images(ref_image, offset_image, filter='yes',
+def shift_from_crosscorrelation_simple_images(ref_image, offset_image,
+                                              filter='yes',
                                               low_pass=256, high_pass=22, sigma=3):
     try:
         ref_image = ref_image.data

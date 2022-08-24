@@ -67,6 +67,7 @@
     <watches-manager>
       <configuration name="PythonConfigurationType">
         <watch expression="stage_settings" language="Python" />
+        <watch expression="shift" language="Python" />
       </configuration>
     </watches-manager>
   </component>
