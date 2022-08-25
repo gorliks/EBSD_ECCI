@@ -7,7 +7,6 @@ from importlib import reload  # Python 3.4+
 from dataclasses import dataclass
 from enum import Enum
 
-
 try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.structures import (AdornedImage,
@@ -15,8 +14,7 @@ try:
                                                              Rectangle,
                                                              RunAutoCbSettings,
                                                              Point)
-    from autoscript_sdb_microscope_client.enumerations import (
-                                                        CoordinateSystem)
+    from autoscript_sdb_microscope_client.enumerations import (CoordinateSystem)
 except:
     print('Autoscript module not found')
 
@@ -24,6 +22,7 @@ except:
 class BeamType(Enum):
     ION = 'ION'
     ELECTRON = 'ELECTRON'
+
 
 @dataclass
 class MicroscopeState:
@@ -125,8 +124,6 @@ def save_image(image, path=None, file_name=None):
         print('error {e}, Image could not be saved')
 
 
-
-
 def populate_experiment_data_frame(data_frame : dict,
                                    keys : list,
                                    microscope_state : MicroscopeState,
@@ -175,12 +172,23 @@ def extract_metadata_from_tif(path_to_file):
         return metadata_dict
 
 
-def make_copy_of_Adorned_image(image : AdornedImage) -> AdornedImage:
+def make_copy_of_Adorned_image(image):
     copy = AdornedImage()
     AdornedImage._AdornedImage__construct_from_data(copy,
                                                     data=image.data)
     copy.metadata = image.metadata
     return copy
+
+
+def rotate_coordinate_in_xy(coord : list = (0,0),
+                            angle : float = 0) -> list:
+    matrix = np.array([
+        [+np.cos(angle), -np.sin(angle)],
+        [+np.sin(angle), +np.cos(angle)]
+    ])
+    coord = np.array(coord)
+    coord_rot = np.dot(matrix, coord)
+    return list(coord_rot)
 
 
 
@@ -205,9 +213,7 @@ if __name__ == '__main__':
 
 
     metadata_dict = extract_metadata_from_tif(path_to_file='01_tilted.tif')
-
     metadata = metadata_dict[34682][0]
-
     metadata = metadata.split('\r\n')
     pairs = len(metadata)//2
     # for ii in range(pairs):

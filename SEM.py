@@ -25,13 +25,7 @@ reload(movement)
 reload(correlation)
 reload(utils)
 
-
-from enum import Enum
-class BeamType(Enum):
-    ION = 'ION'
-    ELECTRON = 'ELECTRON'
-
-
+from utils import BeamType
 
 class Microscope():
     def __init__(self, settings: dict = None, log_path: str = None,
@@ -72,13 +66,12 @@ class Microscope():
         """Automatically adjust the microscope image contrast."""
         if not self.demo:
             self.microscope.imaging.set_active_view(quadrant)
-            RunAutoCbSettings(
-                method="MaxContrast",
-                resolution="768x512",  # low resolution, so as not to damage the sample
-                number_of_frames=5,
-            )
+            settings = RunAutoCbSettings(
+                            method="MaxContrast",
+                            resolution="768x512",  # low resolution, so as not to damage the sample
+                            number_of_frames=5)
             #logging.info("automatically adjusting contrast...")
-            self.microscope.auto_functions.run_auto_cb()
+            self.microscope.auto_functions.run_auto_cb(settings)
         else:
             print('demo: automatically adjusting contrast...')
 
@@ -169,8 +162,9 @@ class Microscope():
                                                   t=position.t, r=position.r)
             return (position.x, position.y, position.z,
                     position.t, position.r)
+
         except Exception as e:
-            print(f'demo mode, error {e}, simulated coordinates are:')
+            print(f'stage position, error {e}, simulated coordinates are:')
             #[x, y, z, t, r] = np.random.randint( 0,5, [5,1] ).astype(float)
             [x, y, z, t, r] = np.random.rand(5, 1)
             MicroscopeState.update_stage_position(self.microscope_state,
@@ -199,6 +193,36 @@ class Microscope():
         MicroscopeState.update_stage_position(self.microscope_state,
                                               x=x, y=y, z=z, r=r, t=t)
         print('coords = ', MicroscopeState.get_stage_position(self.microscope_state))
+
+
+    def move_stage_corrected(self,
+                             expected_x : float = 0,
+                             expected_y : float = 0) -> None:
+        """Stage movement in X, Y, corrected for stage_tilt and scan_rotation
+        ----------
+        expected_x : in meters
+        expected_y : in meters
+        Returns
+        -------
+            None
+        """
+        self._get_current_microscope_state()  # update the microscope state to refresh the current stage tilt
+        stage_tilt = self.microscope_state.t # tilt in radians
+        scan_rotation = self.microscope_state.scan_rotation_angle # scan rotation in radians
+
+        """ First correct the movement for the stage tilt """
+        x_corrected = expected_x #x-axis does not need correction for stage tilt """
+        y_corrected = +np.cos(stage_tilt) * expected_y
+        z_corrected = -np.sin(stage_tilt) * expected_y
+
+        """ Correct the (x,y) movement for the scan rotation """
+        (x_corrected, y_corrected) = utils.rotate_coordinate_in_xy(coord=(x_corrected, y_corrected),
+                                                                   angle=-scan_rotation)
+        """ perform movement """
+        self.move_stage(x=x_corrected,
+                        y=y_corrected,
+                        z=z_corrected,
+                        move_type="Relative")
 
 
 
@@ -248,15 +272,15 @@ class Microscope():
         float: system-level scan rotation angle in degrees
         """
         try:
+            rot_min = self.microscope.beams.electron_beam.scanning.rotation.limits.min
+            rot_max = self.microscope.beams.electron_beam.scanning.rotation.limits.max
+
             if type=="Relative":
                 """
                     Change the current scan rotation by the specified value
                     Check that targety scan_rot does not exceed (-2pi, +2pi)
                     Otherwise divide module to stay within the (-2pi, +2pi) range
                 """
-                rot_min = self.microscope.beams.electron_beam.scanning.rotation.limits.min
-                rot_max = self.microscope.beams.electron_beam.scanning.rotation.limits.max
-
                 current_scan_rot = \
                     self.microscope.beams.electron_beam.scanning.rotation.value
 
@@ -265,28 +289,34 @@ class Microscope():
                 if target_rot_angle >=rot_max:
                     target_rot_angle = target_rot_angle % (2*np.pi)
                 elif target_rot_angle <=rot_min:
-                    target_rot_angle = target_rot_angle % (2 * np.pi)
+                    target_rot_angle = target_rot_angle % (2*np.pi)
 
-                print(f"setting scan rotation to {np.rad2deg(target_rot_angle)}")
+                print(f"setting scan rotation {type} to {np.rad2deg(target_rot_angle)}")
+                # TODO backend from from frontend separation
                 self.microscope.beams.electron_beam.scanning.rotation.value = target_rot_angle
-
 
             elif type=="Absolute":
                 """Absolute value of the scan rotation"""
+                if rotation_angle >=rot_max:
+                    rotation_angle = rotation_angle % (2*np.pi)
+                elif rotation_angle <=rot_min:
+                    rotation_angle = rotation_angle % (2*np.pi)
+
+                print(f"setting scan rotation {type} to {np.rad2deg(rotation_angle)}")
+                # TODO backend from from frontend separation
                 self.microscope.beams.electron_beam.scanning.rotation.value = rotation_angle
 
             self._get_current_microscope_state()
-            return np.rad2deg(self.microscope.beams.electron_beam.scanning.rotation.value)
+            return self.microscope.beams.electron_beam.scanning.rotation.value
 
         except Exception as e:
-            print(f'Scan rotation {type} by {np.rad2deg(rotation_angle)} deg, error {e}')
+            print(f'Failed to set scan rotation {type} by {np.rad2deg(rotation_angle)} deg, error {e}')
             return rotation_angle
 
 
     def set_beam_shift(self,
                        beam_shift_x : float = 0.0,
-                       beam_shift_y : float = 0.0,
-                       ) -> None:
+                       beam_shift_y : float = 0.0) -> None:
         """Adjusting the beam shift
         Args:
             beam_shift_x: in metres, shift along x-axis
@@ -314,11 +344,63 @@ class Microscope():
         try:
             print(f"reseting e-beam shift to (0, 0) from: {self.microscope.beams.electron_beam.beam_shift.value}")
             self.microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+            print(f"reset beam shifts to zero complete")
         except Exception as e:
             print(f"Could not reset the beam shift, error {e}")
-        print(f"reset beam shifts to zero complete")
         self._get_current_microscope_state()
         # logging.info(f"reset beam shifts to zero complete")
+
+
+    def stage_shift_alignment(self,
+                             ref_image,
+                             image) -> list:
+        """Align the images by moving the stage
+        Args:
+            ref_image (AdornedImage): reference image to align to
+            image: shifted image
+            reduced_area (Rectangle): The reduced area to image with.
+            mode: type of alignment (crosscorrelation, phase, phase_subpixel)
+            crosscorrelation seems to work with noisy images, where phase correlation fails
+            but phase correlation give sub-pixel precision
+        Returns:
+            shift: list of offset coordinates
+        """
+
+        rect_mask = correlation.rectangular_mask(size=ref_image.data.shape, sigma=20)
+        low_pass = int(max(ref_image.data.shape) / 6)   # =128 worked for 768x512
+        high_pass = int(max(ref_image.data.shape) / 64) # =12 worked for 768x512
+        sigma = int(max(ref_image.data.shape) / 256)    # =3 worked for 768x512
+
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image.data * rect_mask,
+                                                                      offset_image=image.data * rect_mask,
+                                                                      filter='yes',
+                                                                      low_pass=low_pass,
+                                                                      high_pass=high_pass,
+                                                                      sigma=sigma)
+        """ check that the shift is not too large e.g. due to the cross-correlation failure
+            set the shift values to zero if the shift is larger than the quarter of the 
+            corresponding (hor,ver) field width
+        """
+        if (abs(shift) > np.array(ref_image.data.shape) / 4).any():
+            print('Something went wrong with the cross-correlation, the shift is larger than quarter field width\n'
+                  'Setting the stage shift to zero')
+            shift = shift * 0
+
+        """ convert pixels to metres """
+        shift = movement.pixels_to_metres(coord=shift, image=ref_image)
+        dx = shift[1]
+        dy = shift[0]
+
+        """ move the stage """
+        try:
+            print(f"Trying to move the stage by shift correction {-dx}, {+dy}")
+            self.move_stage_corrected(expected_x=-dx,
+                                      expected_y=+dy)
+            self._get_current_microscope_state()
+        except Exception as e:
+            print(f"Could not apply stage shift, error {e}")
+
+        return shift
 
 
     def beam_shift_alignment(self,
@@ -340,19 +422,17 @@ class Microscope():
             shift: list of offset coordinates
         """
 
-        rect_mask = correlation.rectangular_mask(size=ref_image.data.shape,
-                                                 sigma=20)
-        low_pass = int(max(ref_image.data.shape) / 6)  # =128 worked for 768x512
+        rect_mask = correlation.rectangular_mask(size=ref_image.data.shape, sigma=20)
+        low_pass = int(max(ref_image.data.shape) / 6)   # =128 worked for 768x512
         high_pass = int(max(ref_image.data.shape) / 64) # =12 worked for 768x512
-        sigma = 3
+        sigma = int(max(ref_image.data.shape) / 256)    # =3 worked for 768x512
 
         shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image.data * rect_mask,
                                                                       offset_image=image.data * rect_mask,
                                                                       filter='yes',
                                                                       low_pass=low_pass,
                                                                       high_pass=high_pass,
-                                                                      sigma=sigma
-                                                                      )
+                                                                      sigma=sigma)
         """ check that the shift is not too large e.g. due to the cross-correlation failure
             set the shift values to zero if the shift is larger than the quarter of the 
             corresponding (hor,ver) field width
@@ -371,6 +451,7 @@ class Microscope():
         # TODO check the syntax +=(-dy, dx) or +=Point(-dx,dy)
         try:
             print(f"trying to apply beam shift correction {dx}, {-dy}")
+            # TODO backend from frontend separation
             self.microscope.beams.electron_beam.beam_shift.value += (dx, -dy)
             self._get_current_microscope_state()
         except Exception as e:
@@ -525,11 +606,9 @@ class Microscope():
             self.save = gui_settings["imaging"]["save"]
 
         if path:
-            print("<-------->", path)
             self.path = path
         else:
             self.path = gui_settings["imaging"]["path"]
-            print("-------->", self.path)
 
         if bit_depth:
             self.bit_depth = bit_depth
@@ -555,6 +634,10 @@ class Microscope():
         )
 
         return self.image_settings
+
+
+    def disconnect(self):
+        self.microscope.disconnect()
 
 
 if __name__ == '__main__':

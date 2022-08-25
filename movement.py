@@ -96,7 +96,7 @@ def move_stage(microscope,
                 position.t, position.r)
 
     except Exception as e:
-        print(f'error {e}: movement abs: Could not execute movement, demo mode')
+        print(f'error {e}: movement abs: Could not execute movement')
         return (5,5,5,5,5)
 
 
@@ -127,7 +127,7 @@ def rotate_stage(microscope,
                 position.t, position.r
                 )
     except Exception as e:
-        print(f'error {e}: movement rel: Could not execute movement, demo mode')
+        print(f'error {e}: rotate {move_type}: Could not execute movement')
         return (5,5,5,5,5)
 
 
@@ -144,7 +144,7 @@ def tilt_stage(microscope,
     try:
         """TODO !Compucentric tilt positioning option is not supported on this microscope!"""
         stage = microscope.specimen.stage
-        #stage_settings = MoveSettings(tilt_compucentric=True)
+        #stage_settings = MoveSettings(tilt_compucentric=True) #<--- the stage does not tilt with this setting on
         stage_settings = MoveSettings(rotate_compucentric=True)
 
         new_stage_position = StagePosition(t=t)
@@ -160,7 +160,7 @@ def tilt_stage(microscope,
                 position.t, position.r
                 )
     except Exception as e:
-        print(f'error {e}: movement rel: Could not execute movement, demo mode')
+        print(f'error {e}: tilt {move_type}: Could not execute movement')
         return (5,5,5,5,5)
 
 

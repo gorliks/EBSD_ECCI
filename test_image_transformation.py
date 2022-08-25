@@ -149,10 +149,13 @@ def rotate_about_x(points, angle, image):
 #########################################################################################
 #########################################################################################
 #########################################################################################
-if 0:
+if 1:
     tilted_image = correlation.load_image("01_tilted.tif")
     flat_image = correlation.load_image("02_flat.tif")
     image3 = correlation.load_image("02_flat_shifted.tif")
+
+    flat_image = correlation.load_image("tilt00_000000_rot_tilt__220824.153205.tif")
+    tilted_image = correlation.load_image("tilt20_000440_rot_tilt__220824.155523.tif")
 
     shape = tilted_image.shape
     xmin = 0
@@ -168,7 +171,7 @@ if 0:
     src = np.array(src)
 
     dst = rotate_about_x(points=src,
-                         angle=52,
+                         angle=20,
                          image=flat_image)
 
     untilted_image = projective_transform_from_points(points_src=src,
@@ -254,7 +257,7 @@ if 0:
 #########################################################################################
 #########################################################################################
 
-if 1:
+if 0:
 
     src = [[445.28349348, 713.83713241],
            [330.83521061, 713.83713241],

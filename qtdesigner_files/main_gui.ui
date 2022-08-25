@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1278</width>
-    <height>723</height>
+    <width>1270</width>
+    <height>830</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -87,6 +87,9 @@
        </property>
       </widget>
       <widget class="QTabWidget" name="tabWidget">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -99,7 +102,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="SEM">
         <attribute name="title">
@@ -195,7 +198,7 @@
           <double>10000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>80.000000000000000</double>
+          <double>100.000000000000000</double>
          </property>
         </widget>
         <widget class="QDoubleSpinBox" name="spinBox_dwell_time">
@@ -211,7 +214,7 @@
           <double>10000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>1.000000000000000</double>
+          <double>2.000000000000000</double>
          </property>
         </widget>
         <widget class="QPushButton" name="pushButton_select_directory">
@@ -286,6 +289,9 @@
          </property>
         </widget>
         <widget class="QCheckBox" name="checkBox_autocontrast">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="geometry">
           <rect>
            <x>110</x>
@@ -298,7 +304,7 @@
           <string>autocontrast</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
         <widget class="QPushButton" name="pushButton_last_image">
@@ -327,7 +333,7 @@
           <string>save image</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
         <widget class="QComboBox" name="comboBox_beam_type">
@@ -410,9 +416,9 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>410</y>
+           <y>450</y>
            <width>101</width>
-           <height>31</height>
+           <height>21</height>
           </rect>
          </property>
          <property name="text">
@@ -573,7 +579,7 @@
            <x>10</x>
            <y>380</y>
            <width>101</width>
-           <height>24</height>
+           <height>31</height>
           </rect>
          </property>
          <property name="text">
@@ -609,7 +615,7 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>450</y>
+           <y>430</y>
            <width>111</width>
            <height>20</height>
           </rect>
@@ -943,7 +949,7 @@
           <double>100000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>100.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
         </widget>
         <widget class="QDoubleSpinBox" name="doubleSpinBox_x_step">
@@ -1023,7 +1029,7 @@
           <double>100000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>100.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
         </widget>
         <widget class="QLabel" name="label_55">
@@ -1126,7 +1132,7 @@
           <double>100000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>100.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
         </widget>
         <widget class="QLabel" name="label_58">
@@ -1213,7 +1219,7 @@
           <double>100000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>0.500000000000000</double>
+          <double>1.000000000000000</double>
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBox_Nt">
@@ -1280,7 +1286,7 @@
           <double>100000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>45.000000000000000</double>
+          <double>20.000000000000000</double>
          </property>
         </widget>
         <widget class="QLabel" name="label_63">
@@ -1316,7 +1322,7 @@
           <double>100000000.000000000000000</double>
          </property>
          <property name="value">
-          <double>180.000000000000000</double>
+          <double>90.000000000000000</double>
          </property>
         </widget>
         <widget class="QLabel" name="label_64">
@@ -1460,7 +1466,7 @@
           <string>autocontrast</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
         <widget class="QLabel" name="label_x">
@@ -1528,12 +1534,12 @@
           <string/>
          </property>
         </widget>
-        <widget class="QCheckBox" name="checkBox_drif_correction">
+        <widget class="QCheckBox" name="checkBox_stage_drift_correction">
          <property name="geometry">
           <rect>
-           <x>110</x>
+           <x>10</x>
            <y>400</y>
-           <width>131</width>
+           <width>311</width>
            <height>20</height>
           </rect>
          </property>
@@ -1544,10 +1550,32 @@
           </font>
          </property>
          <property name="text">
-          <string>drift correction</string>
+          <string>coarse drift correction by stage movement</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
+         </property>
+        </widget>
+        <widget class="QCheckBox" name="checkBox_beam_shift_drift_correction">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>430</y>
+           <width>311</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>fine drift correction by beam shift</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </widget>
@@ -1717,7 +1745,7 @@
            <x>10</x>
            <y>260</y>
            <width>181</width>
-           <height>24</height>
+           <height>31</height>
           </rect>
          </property>
          <property name="text">
@@ -2527,7 +2555,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1278</width>
+     <width>1270</width>
      <height>26</height>
     </rect>
    </property>

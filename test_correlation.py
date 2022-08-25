@@ -159,7 +159,7 @@ if 0:
 #########################################################################################
 #########################################################################################
 
-if 1:
+if 0:
     DIR_shifts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_zscan_220817.092630'
     DIR_rotations = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_220817.094443'
     DIR_rotations_scanRotCorrection = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rscan_SRcorrected_220817.095914'
@@ -222,5 +222,81 @@ if 1:
                                                           title=f'Simple corr:')
 
 
+
+
+
+
+#########################################################################################
+#########################################################################################
+#########################################################################################
+
+if 1:
+    DIR_tilts = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_Si_tilt__220824.143216'
+    DIR = DIR_tilts
+    images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
+    i = 0
+    di = 40
+    tilt = (i+di)*0.5
+
+    DIR_rot = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_Si_rot__220824.141835'
+    DIR = DIR_rot
+    images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
+    i = 0
+    di = 8
+    rotation = (i+di)*5
+
+    DIR_rot_tilt = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rot_tilt__220824.153205'
+    DIR = DIR_rot_tilt
+    images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
+    i = 0
+    di = 133
+
+    ref_image = correlation.load_image(images[i])
+    offset_image = correlation.load_image(images[i+di])
+
+    ref_image = correlation.normalise(ref_image)
+    offset_image = correlation.normalise(offset_image)
+
+    # low_pass = int(max(offset_image.data.shape) / 12)  # =128 @ 1536x1024, good for e-beam images
+    # high_pass = int(max(offset_image.data.shape) / 256)  # =6   @ 1536x1024, good for e-beam images
+    # sigma = int(3 * max(offset_image.data.shape) / 1536)  # ~2-3   @ 1536x1024, good for e-beam images
+
+    low_pass = int(max(offset_image.data.shape) / 6) # =128 worked for @768x512
+    high_pass = int(max(offset_image.data.shape) / 64) # =12 worked for @768x512
+    sigma = int(max(offset_image.data.shape) / 256)
+    print(f'lowpass = {low_pass}, highpass = {high_pass}, sigma = {sigma}')
+
+
+    rect_mask = correlation.rectangular_mask(size=offset_image.shape, sigma=20)
+
+    ref_image_filtered, _, _ = correlation.filter_image_in_fourier_space(image=ref_image * rect_mask,
+                                                                         low_pass=low_pass,
+                                                                         high_pass=high_pass,
+                                                                         sigma=sigma,
+                                                                         plot=True)
+    offset_image_filtered, _, _ = correlation.filter_image_in_fourier_space(image=offset_image * rect_mask,
+                                                                            low_pass=low_pass,
+                                                                            high_pass=high_pass,
+                                                                            sigma=sigma,
+                                                                            plot=True)
+
+
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_subpixel',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=sigma,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Phase subpixel:')
+
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=3,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Phase corr:')
+
+    shift, aligned = test_alignment_from_crosscorrelation(ref_image, offset_image, type='simple',
+                                                          filter='yes', low_pass = low_pass, high_pass=high_pass, sigma=3,
+                                                          rect_mask=rect_mask,
+                                                          plot=True,
+                                                          title=f'Simple corr:')
 
 

@@ -168,6 +168,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.microscope.establish_connection()
         self.label_messages.setText(str(self.microscope.microscope_state))
 
+
     def acquire_image(self):
         gui_settings = self.create_settings_dict()
         self.image = \
@@ -183,6 +184,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         print(f"pixel size = {self.pixelsize_x/1e-9} nm")
         self.update_display(image=self.image)
         return self.image
+
 
     def last_image(self):
         quadrant = int(self.comboBox_quadrant.currentText())
@@ -341,7 +343,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             coords.append(event.xdata)
             coords = np.flip(coords[-2:], axis=0)
             coords = movement.pixel_to_realspace_coordinate(coord=coords, image=image)
-            print(coords)
             self.doubleSpinBox_point_x.setValue(coords[0])
             self.doubleSpinBox_point_y.setValue(coords[1])
 
@@ -394,7 +395,12 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
         """Store the current microscope state, including the current position"""
         stored_microscope_state = self.microscope._get_current_microscope_state()
-        print(stored_microscope_state)
+        x0 = stored_microscope_state.x
+        y0 = stored_microscope_state.y
+        z0 = stored_microscope_state.z
+        t0 = stored_microscope_state.t
+        r0 = stored_microscope_state.r
+        scan_rot0 = stored_microscope_state.scan_rotation_angle
 
         """Create directory for saving the stack"""
         if self.DIR:
@@ -440,36 +446,42 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             previous_image = None
             counter = 0
 
+            """ ---------------- X Y Z scans ---------------- """
             for ii in range(Nx):
                 self.label_x.setText(f"{ii + 1} of")
-                if Nx >= 3: self.microscope.move_stage(x=self.stack_settings.dx,
-                                                       move_type="Relative")
+                if Nx>=3: self.microscope.move_stage(x=self.stack_settings.dx, move_type="Relative")
                 for jj in range(Ny):
                     self.label_y.setText(f"{jj + 1} of")
-                    if Ny >= 3: self.microscope.move_stage(y=self.stack_settings.dy,
-                                                           move_type="Relative")
+                    if Ny>=3: self.microscope.move_stage(y=self.stack_settings.dy, move_type="Relative")
                     for kk in range(Nz):
                         self.label_z.setText(f"{kk + 1} of")
-                        if Nz >= 3: self.microscope.move_stage(z=self.stack_settings.dz,
-                                                               move_type="Relative")
+                        if Nz>=3: self.microscope.move_stage(z=self.stack_settings.dz, move_type="Relative")
+
+                        """ ---------------- tilt scan ---------------- """
                         for oo in range(Nt):
                             self.label_t.setText(f"{oo + 1} of")
-                            if Nt >= 2 and counter>0:
-                                self.microscope.tilt_stage(t=self.stack_settings.dt,
-                                                           move_type="Relative")
+                            if Nt>=2 and counter>0:
+                                new_tilt = t0 + oo * self.stack_settings.dt
+                                self.microscope.tilt_stage(t=new_tilt, move_type="Absolute")
+
+                            """ ---------------- rotation scan ---------------- """
                             for qq in range(Nr):
                                 self.label_r.setText(f"{qq + 1} of")
-                                if Nr >= 2 and counter>0:
-                                    self.microscope.rotate_stage(r=self.stack_settings.dr,
-                                                                 move_type="Relative")
-                                    """correct stage rotation with scan rotation for image alignment"""
-                                    if self.checkBox_scan_rotation_correction.isChecked() and counter > 0:
-                                        self.microscope.set_scan_rotation(rotation_angle=-1 * self.stack_settings.dr,
-                                                                          type="Relative")
+                                if Nr>=2 and counter>0:
+                                    new_rot_angle = r0 + qq * self.stack_settings.dr
+                                    self.microscope.rotate_stage(r=new_rot_angle, move_type="Absolute")
 
-                                """
-                                    After all the movements are done, take images, save images, etc 
-                                """
+                                    # correct stage rotation with scan rotation for image alignment
+                                    # stage rotated total by dr,
+                                    # image rotated by dr, scanning must be rotated relative by -dr
+                                    # scan rotation = initial_scan_rotation - dr
+                                    if self.checkBox_scan_rotation_correction.isChecked():
+                                        stage_rotated_by = qq * self.stack_settings.dr
+                                        correction_scan_rotation = scan_rot0 - stage_rotated_by
+                                        self.microscope.set_scan_rotation(rotation_angle=correction_scan_rotation,
+                                                                          type="Absolute")
+
+                                # After all the movements are done, take images, save images, etc
                                 self.microscope._get_current_microscope_state()
 
                                 file_name = '%06d_' % counter + sample_name + '_' + \
@@ -480,18 +492,27 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                 utils.save_image(image, path=self.stack_dir, file_name=file_name)
 
 
-                                """Take an image and correct the drift, No need to correct the first image"""
-                                if counter>0 and self.checkBox_drif_correction.isChecked():
-                                    _shift_ = self.microscope.beam_shift_alignment(ref_image=previous_image,
+                                """ Correct the drift by stage movement. No need to correct the first image """
+                                if self.checkBox_stage_drift_correction.isChecked() and counter>0:
+                                    # find shift and execute stage correction
+                                    _shift = self.microscope.stage_shift_alignment(ref_image=previous_image,
                                                                                    image=image,
                                                                                    mode='crosscorrelation')
-                                    shift = movement.pixels_to_metres(_shift_, image)
-                                    # """Take the aligned image"""
-                                    # TODO execute beam shift correction
-                                    #image = self.acquire_image()
-                                    #utils.save_image(image, path=self.stack_dir, file_name='aligned_' + file_name)
+                                    image = self.acquire_image() # take coarsely aligned image
+                                    utils.save_image(image, path=self.stack_dir, file_name=file_name+'aligned_coarse')
 
-                                previous_image = utils.make_copy_of_Adorned_image(image)
+                                """ Correct the drift by beam shift. No need to correct the first image """
+                                if self.checkBox_beam_shift_drift_correction.isChecked() and counter>0:
+                                    # find shift and execute beam shift correction
+                                    _shift = self.microscope.beam_shift_alignment(ref_image=previous_image,
+                                                                                  image=image,
+                                                                                  mode='crosscorrelation')
+                                    image = self.acquire_image() # take finely aligned image
+
+
+                                utils.save_image(image, path=self.stack_dir, file_name=file_name+'aligned_fine')
+
+                                previous_image = utils.make_copy_of_Adorned_image(image) #copy the aligned image for the next alignment
 
                                 self.experiment_data = utils.populate_experiment_data_frame(
                                     data_frame=self.experiment_data,
