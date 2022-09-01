@@ -86,7 +86,7 @@ if __name__ == '__main__':
         grab_frame_settings = GrabFrameSettings(resolution="768x512", dwell_time=dwell_time)
         ref_image = microscope.imaging.grab_frame(grab_frame_settings)
 
-        """ manually shift the image using beam shift"""
+        """ manually shift the image using stage shift"""
         shift_x = +32.2e-6
         shift_y = -21.3e-6
         stage_settings = MoveSettings(rotate_compucentric=True)

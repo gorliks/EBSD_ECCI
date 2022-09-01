@@ -941,7 +941,7 @@ def correct_image_by_shift(image,
 
 def load_image(file_path):
     image = Image.open(file_path)
-    image = np.array(image)
+    image = np.array(image, dtype=np.float64)
     return image
 
 

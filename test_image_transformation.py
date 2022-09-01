@@ -6,7 +6,7 @@ from scipy import fftpack, misc
 import numpy as np
 import matplotlib.pyplot as plt
 
-import os, time
+import os, glob
 import numpy as np
 import skimage.util
 import skimage
@@ -23,23 +23,26 @@ def test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_su
                                          plot=False, title=''):
     rect_mask = np.array(rect_mask)
     if rect_mask.any():
-        ref_image = ref_image * rect_mask
-        offset_image = offset_image * rect_mask
+        pass
+    else:
+        rect_mask = 1
+
 
     if type=='crosscorrelation':
-        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image,
-                                                                      offset_image=offset_image,
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image * rect_mask,
+                                                                      offset_image=offset_image * rect_mask,
                                                                       filter=filter,
                                                                       low_pass=low_pass, high_pass=high_pass, sigma=sigma)
     elif type=='phase':
-        shift = correlation.pixel_shift_from_phase_cross_correlation(ref_image=ref_image,
-                                                                     offset_image=offset_image)
+        shift = correlation.pixel_shift_from_phase_cross_correlation(ref_image=ref_image * rect_mask,
+                                                                     offset_image=offset_image * rect_mask)
     elif type=='phase_subpixel':
-        shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image,offset_image=offset_image,
+        shift = correlation.subpixel_shift_from_crosscorrelation(ref_image=ref_image * rect_mask,
+                                                                 offset_image=offset_image * rect_mask,
                                                                  upsample_factor=100)
     else:
-        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image,
-                                                                      offset_image=offset_image,
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image * rect_mask,
+                                                                      offset_image=offset_image * rect_mask,
                                                                       filter=filter,
                                                                       low_pass=low_pass, high_pass=high_pass,
                                                                       sigma=sigma)
@@ -48,12 +51,14 @@ def test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_su
 
 
     if plot:
-        fig = plt.figure(figsize=(16, 6))
+        fig = plt.figure(figsize=(16, 16))
         fig.suptitle(title + f"\n lowpass {low_pass}, highpass {high_pass}, sigma {sigma}"
                      f"\n {shift}", fontsize=16)
-        ax1 = plt.subplot(1, 3, 1)
-        ax2 = plt.subplot(1, 3, 2, sharex=ax1, sharey=ax1)
-        ax3 = plt.subplot(1, 3, 3, sharex=ax2, sharey=ax2)
+        ax1 = plt.subplot(2, 2, 1)
+        ax2 = plt.subplot(2, 2, 2, sharex=ax1, sharey=ax1)
+        ax3 = plt.subplot(2, 2, 3, sharex=ax2, sharey=ax2)
+        ax4 = plt.subplot(2, 2, 4, sharex=ax3, sharey=ax3)
+
 
         ax1.imshow(ref_image, cmap='gray')
         ax1.set_axis_off()
@@ -64,10 +69,14 @@ def test_alignment_from_crosscorrelation(ref_image, offset_image, type='phase_su
         ax2.set_axis_off()
         ax2.set_title('next image overlayed with previous')
 
-        ax3.imshow(ref_image, cmap='Blues_r', alpha=1)
-        ax3.imshow(aligned, cmap='Oranges_r', alpha=0.5)
+        ax3.imshow(aligned, cmap='gray')
         ax3.set_axis_off()
-        ax3.set_title("aligned overlayed")
+        ax3.set_title('offset image after alignment')
+
+        ax4.imshow(ref_image, cmap='Blues_r', alpha=1)
+        ax4.imshow(aligned, cmap='Oranges_r', alpha=0.5)
+        ax4.set_axis_off()
+        ax4.set_title("aligned overlayed")
 
     return shift, aligned
 
@@ -157,6 +166,12 @@ if 1:
     flat_image = correlation.load_image("tilt00_000000_rot_tilt__220824.153205.tif")
     tilted_image = correlation.load_image("tilt20_000440_rot_tilt__220824.155523.tif")
 
+    DIR_rot_tilt = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rot_tilt__220824.153205'
+    DIR = DIR_rot_tilt
+    files_names = sorted(glob.glob(os.path.join(DIR, '*.tif')))
+    flat_image = correlation.load_image(files_names[0])
+    tilted_image = correlation.load_image(files_names[440])
+
     shape = tilted_image.shape
     xmin = 0
     xmax = shape[0]
@@ -198,7 +213,7 @@ if 1:
                                                                             low_pass=low_pass,
                                                                             high_pass=high_pass,
                                                                             sigma=sigma,
-                                                                            plot=True,
+                                                                            plot=False,
                                                                             title=f"untilted image \n"
                                                                                   f"lowpass {low_pass}, highpass {high_pass}, sigma {sigma}")
 
@@ -235,7 +250,7 @@ if 1:
     ax4.imshow(flat_image, cmap='Blues_r', alpha=1)
     ax4.imshow(untilted_image, cmap='Oranges_r', alpha=0.5)
     ax4.set_axis_off()
-    ax4.set_title("overlayed")
+    ax4.set_title("flat+untilted overlayed")
 
 
 #########################################################################################
