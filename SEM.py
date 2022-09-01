@@ -6,7 +6,9 @@ try:
                                                              GrabFrameSettings,
                                                              Rectangle,
                                                              RunAutoCbSettings,
-                                                             Point)
+                                                             Point,
+                                                             MoveSettings,
+                                                             StagePosition)
     from autoscript_sdb_microscope_client.enumerations import (
                                                         CoordinateSystem)
 except:
@@ -93,7 +95,7 @@ class Microscope():
         if not self.demo:
             if gui_settings is not None:
                 settings = self.update_image_settings(gui_settings)
-                print('settings = ', settings)
+                #print('settings = ', settings)
                 self.microscope.imaging.set_active_view(settings.quadrant)
 
                 hfw = settings.horizontal_field_width
@@ -213,16 +215,18 @@ class Microscope():
         """ First correct the movement for the stage tilt """
         x_corrected = expected_x #x-axis does not need correction for stage tilt """
         y_corrected = +np.cos(stage_tilt) * expected_y
-        z_corrected = -np.sin(stage_tilt) * expected_y
+        z_corrected = 0#-np.sin(stage_tilt) * expected_y # TODO verify that z movements are safe!
 
         """ Correct the (x,y) movement for the scan rotation """
         (x_corrected, y_corrected) = utils.rotate_coordinate_in_xy(coord=(x_corrected, y_corrected),
                                                                    angle=-scan_rotation)
         """ perform movement """
-        self.move_stage(x=x_corrected,
-                        y=y_corrected,
-                        z=z_corrected,
-                        move_type="Relative")
+        stage_settings = MoveSettings(rotate_compucentric=True)
+        self.microscope.specimen.stage.relative_move(StagePosition(x=x_corrected, y=y_corrected),
+                                                stage_settings)
+        # self.move_stage(x=x_corrected,
+        #                 y=y_corrected,
+        #                 move_type="Relative")
 
 
 
@@ -352,8 +356,9 @@ class Microscope():
 
 
     def stage_shift_alignment(self,
-                             ref_image,
-                             image) -> list:
+                              ref_image,
+                              image,
+                              mode='crosscorrelation') -> list:
         """Align the images by moving the stage
         Args:
             ref_image (AdornedImage): reference image to align to
@@ -367,12 +372,12 @@ class Microscope():
         """
 
         rect_mask = correlation.rectangular_mask(size=ref_image.data.shape, sigma=20)
-        low_pass = int(max(ref_image.data.shape) / 6)   # =128 worked for 768x512
+        low_pass  = int(max(ref_image.data.shape) / 6)   # =128 worked for 768x512
         high_pass = int(max(ref_image.data.shape) / 64) # =12 worked for 768x512
-        sigma = int(max(ref_image.data.shape) / 256)    # =3 worked for 768x512
+        sigma     = int(max(ref_image.data.shape) / 256)    # =3 worked for 768x512
 
-        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image.data * rect_mask,
-                                                                      offset_image=image.data * rect_mask,
+        shift = correlation.shift_from_crosscorrelation_simple_images(ref_image=ref_image.data,
+                                                                      offset_image=image.data,
                                                                       filter='yes',
                                                                       low_pass=low_pass,
                                                                       high_pass=high_pass,
@@ -382,7 +387,7 @@ class Microscope():
             corresponding (hor,ver) field width
         """
         if (abs(shift) > np.array(ref_image.data.shape) / 4).any():
-            print('Something went wrong with the cross-correlation, the shift is larger than quarter field width\n'
+            print('Something went wrong with the cross-correlation, the shift is larger than quarter of field width\n'
                   'Setting the stage shift to zero')
             shift = shift * 0
 
@@ -438,7 +443,7 @@ class Microscope():
             corresponding (hor,ver) field width
         """
         if (abs(shift) > np.array(ref_image.data.shape) / 4).any():
-            print('Something went wrong with the cross-correlation, the shift is larger than quarter field width\n'
+            print('Something went wrong with the cross-correlation, the shift is larger than quarter of field width\n'
                   'Setting the beam shifts to zero')
             shift = shift * 0
 
@@ -450,9 +455,9 @@ class Microscope():
         """ adjust the beamshift """
         # TODO check the syntax +=(-dy, dx) or +=Point(-dx,dy)
         try:
-            print(f"trying to apply beam shift correction {dx}, {-dy}")
+            print(f"trying to apply beam shift correction {-dx}, {dy}")
             # TODO backend from frontend separation
-            self.microscope.beams.electron_beam.beam_shift.value += (dx, -dy)
+            self.microscope.beams.electron_beam.beam_shift.value += (-dx, dy)
             self._get_current_microscope_state()
         except Exception as e:
             print(f"Could not apply beam shift, error {e}")

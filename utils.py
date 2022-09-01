@@ -2,6 +2,7 @@ import datetime
 import time
 import os
 import pandas as pd
+import numpy as np
 
 from importlib import reload  # Python 3.4+
 from dataclasses import dataclass

@@ -5,7 +5,9 @@ import numpy as np
 
 import correlation
 import movement
+import utils
 reload(movement)
+reload(utils)
 
 try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
@@ -85,8 +87,8 @@ if __name__ == '__main__':
         ref_image = microscope.imaging.grab_frame(grab_frame_settings)
 
         """ manually shift the image using beam shift"""
-        shift_x = +13.2e-6
-        shift_y = -8.30e-6
+        shift_x = +32.2e-6
+        shift_y = -21.3e-6
         stage_settings = MoveSettings(rotate_compucentric=True)
         microscope.specimen.stage.relative_move(StagePosition(x=shift_x, y=shift_y), stage_settings)
 
@@ -116,15 +118,22 @@ if __name__ == '__main__':
         dx = shift[1]
         dy = shift[0]
 
+        scan_rotation = microscope.beams.electron_beam.scanning.rotation.value
+
+        (x_corrected, y_corrected) = utils.rotate_coordinate_in_xy(coord=(dx, dy),
+                                                                   angle=-scan_rotation)
         print(f'manual shift was x={shift_x/1e-6}, y={shift_y/1e-6} um')
         print(f'shift found from crosscorrelation x={dx/1e-6}, y={dy/1e-6} um')
+        print(f'corrected for scan rotation x={x_corrected / 1e-6}, y={y_corrected / 1e-6} um')
+
 
         yy = input('Do the correction yes/(no)?')
 
         if yy=='yes':
             print(' - - - - - performing correction  - - - - - ')
             """ correct by stage movement, grab new image"""
-            microscope.specimen.stage.relative_move(StagePosition(x=dx, y=dy), stage_settings)
+            microscope.specimen.stage.relative_move(StagePosition(x=-x_corrected, y=y_corrected),
+                                                    stage_settings)
 
             aligned_image = microscope.imaging.grab_frame(grab_frame_settings)
 
@@ -147,6 +156,8 @@ if __name__ == '__main__':
             ax3.imshow(aligned_image.data, cmap='Oranges_r', alpha=0.5)
             ax3.set_axis_off()
             ax3.set_title("aligned overlayed with reference")
+
+            plt.show()
 
 
 

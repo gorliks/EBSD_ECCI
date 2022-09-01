@@ -181,7 +181,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             print(f'Cannot extract pixel size from the image metadata, error {e}')
 
         self.doubleSpinBox_pixel_size.setValue(self.pixelsize_x / 1e-9)
-        print(f"pixel size = {self.pixelsize_x/1e-9} nm")
+        #print(f"pixel size = {self.pixelsize_x/1e-9} nm")
         self.update_display(image=self.image)
         return self.image
 
@@ -200,7 +200,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
     def move_stage(self):
         compucentric = self.checkBox_compucentric.isChecked()
         move_type = self.comboBox_move_type.currentText()
-        print('compucentric = ', compucentric, '; movw_type = ', move_type)
+        #print('compucentric = ', compucentric, '; movw_type = ', move_type)
         x = self.doubleSpinBox_stage_x.value() * 1e-6
         y = self.doubleSpinBox_stage_y.value() * 1e-6
         z = self.doubleSpinBox_stage_z.value() * 1e-6
@@ -489,30 +489,33 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
                                 """update_display is called inside acquire_image"""
                                 image = self.acquire_image()
-                                utils.save_image(image, path=self.stack_dir, file_name=file_name)
+                                # utils.save_image(image, path=self.stack_dir, file_name=file_name)
 
 
                                 """ Correct the drift by stage movement. No need to correct the first image """
                                 if self.checkBox_stage_drift_correction.isChecked() and counter>0:
                                     # find shift and execute stage correction
-                                    _shift = self.microscope.stage_shift_alignment(ref_image=previous_image,
+                                    _shift = self.microscope.stage_shift_alignment(ref_image=ref_image,
                                                                                    image=image,
                                                                                    mode='crosscorrelation')
                                     image = self.acquire_image() # take coarsely aligned image
-                                    utils.save_image(image, path=self.stack_dir, file_name=file_name+'aligned_coarse')
+
 
                                 """ Correct the drift by beam shift. No need to correct the first image """
                                 if self.checkBox_beam_shift_drift_correction.isChecked() and counter>0:
                                     # find shift and execute beam shift correction
-                                    _shift = self.microscope.beam_shift_alignment(ref_image=previous_image,
+                                    _shift = self.microscope.beam_shift_alignment(ref_image=ref_image,
                                                                                   image=image,
                                                                                   mode='crosscorrelation')
                                     image = self.acquire_image() # take finely aligned image
 
 
-                                utils.save_image(image, path=self.stack_dir, file_name=file_name+'aligned_fine')
+                                utils.save_image(image, path=self.stack_dir, file_name=file_name)
 
-                                previous_image = utils.make_copy_of_Adorned_image(image) #copy the aligned image for the next alignment
+                                if qq==0: # in the beginning of the loop make a reference image
+                                    ref_image = \
+                                        utils.make_copy_of_Adorned_image(image) #copy the aligned image for the next alignment
+
 
                                 self.experiment_data = utils.populate_experiment_data_frame(
                                     data_frame=self.experiment_data,
