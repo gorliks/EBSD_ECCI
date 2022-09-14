@@ -9,7 +9,7 @@ from importlib import reload  # Python 3.4+
 
 from dataclasses import dataclass
 
-import sys, time, os
+import sys, time, os, glob
 import numpy as np
 import SEM
 import correlation
@@ -23,6 +23,9 @@ from matplotlib.backends.backend_qt5agg import (
 import utils
 from utils import BeamType
 
+import h5py
+import hyperspy.api as hs
+import kikuchipy as kp
 
 @dataclass
 class StackSettings:
@@ -102,6 +105,13 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         #
         self.pushButton_correlation.clicked.connect(lambda: self.test_correlation())
         self.pushButton_open_file.clicked.connect(lambda: self._open_file())
+        #
+        self.pushButton_set_EBSD_detector.clicked.connect(lambda: self.setup_EBSD_detector())
+        self.pushButton_open_EBSD_file.clicked.connect(lambda: self._open_EBSD_file())
+        self.pushButton_open_EBSD_stack.clicked.connect(lambda: self._open_EBSD_stack())
+
+
+
 
 
     def test_correlation(self):
@@ -169,11 +179,12 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.label_messages.setText(str(self.microscope.microscope_state))
 
 
-    def acquire_image(self):
+    def acquire_image(self,
+                      hfw = None):
         gui_settings = self.create_settings_dict()
         self.image = \
-            self.microscope.acquire_image(gui_settings=gui_settings)
-
+            self.microscope.acquire_image(gui_settings=gui_settings,
+                                          hfw=hfw)
         try:
             self.pixelsize_x = self.image.metadata.binary_result.pixel_size.x
         except Exception as e:
@@ -181,7 +192,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             print(f'Cannot extract pixel size from the image metadata, error {e}')
 
         self.doubleSpinBox_pixel_size.setValue(self.pixelsize_x / 1e-9)
-        #print(f"pixel size = {self.pixelsize_x/1e-9} nm")
         self.update_display(image=self.image)
         return self.image
 
@@ -460,21 +470,22 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                         """ ---------------- tilt scan ---------------- """
                         for oo in range(Nt):
                             self.label_t.setText(f"{oo + 1} of")
-                            if Nt>=2 and counter>0:
+                            if Nt>=2:
                                 new_tilt = t0 + oo * self.stack_settings.dt
                                 self.microscope.tilt_stage(t=new_tilt, move_type="Absolute")
 
                             """ ---------------- rotation scan ---------------- """
                             for qq in range(Nr):
                                 self.label_r.setText(f"{qq + 1} of")
-                                if Nr>=2 and counter>0:
+                                if Nr>=2:
                                     new_rot_angle = r0 + qq * self.stack_settings.dr
                                     self.microscope.rotate_stage(r=new_rot_angle, move_type="Absolute")
 
-                                    # correct stage rotation with scan rotation for image alignment
-                                    # stage rotated total by dr,
-                                    # image rotated by dr, scanning must be rotated relative by -dr
-                                    # scan rotation = initial_scan_rotation - dr
+                                    ''' correct stage rotation with scan rotation for image alignment
+                                        stage rotated total by dr,
+                                        image rotated by dr, scanning must be rotated relative by -dr
+                                        scan rotation = initial_scan_rotation - dr 
+                                    '''
                                     if self.checkBox_scan_rotation_correction.isChecked():
                                         stage_rotated_by = qq * self.stack_settings.dr
                                         correction_scan_rotation = scan_rot0 - stage_rotated_by
@@ -487,35 +498,44 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                 file_name = '%06d_' % counter + sample_name + '_' + \
                                             utils.current_timestamp() + '.tif'
 
-                                """update_display is called inside acquire_image"""
-                                image = self.acquire_image()
-                                # utils.save_image(image, path=self.stack_dir, file_name=file_name)
-
+                                ''' In the beginning of the loop take two reference images
+                                    "highres": at the same field width as the current scan for beamshift alignment
+                                    "lowres": lower magnification image for stage shift alignment, currently x2 larger hfw
+                                '''
+                                if qq==0: # take the reference images in the beginning
+                                    # TODO better decision for the lowres field width (currently x2)
+                                    hfw_highres = gui_settings["horizontal_field_width"]
+                                    hfw_lowres  = 2 * hfw_highres
+                                    #ref_image = utils.make_copy_of_Adorned_image(image) #copy the aligned image for the next alignment
+                                    ref_image_lowres, ref_image_highres = \
+                                        self.microscope.acquire_low_and_high_res_reference_images(gui_settings=gui_settings,
+                                                                                                  hfw_highres=hfw_highres,
+                                                                                                  hfw_lowres=hfw_lowres)
 
                                 """ Correct the drift by stage movement. No need to correct the first image """
                                 if self.checkBox_stage_drift_correction.isChecked() and counter>0:
+                                    # grab a low res image
+                                    image_low_res = self.acquire_image(hfw=hfw_lowres)
                                     # find shift and execute stage correction
-                                    _shift = self.microscope.stage_shift_alignment(ref_image=ref_image,
-                                                                                   image=image,
-                                                                                   mode='crosscorrelation')
-                                    image = self.acquire_image() # take coarsely aligned image
+                                    _ = self.microscope.stage_shift_alignment(ref_image=ref_image_lowres,
+                                                                              image=image_low_res,
+                                                                              mode='crosscorrelation')
+                                    image_low_res = self.acquire_image() # take coarsely aligned image
 
 
                                 """ Correct the drift by beam shift. No need to correct the first image """
                                 if self.checkBox_beam_shift_drift_correction.isChecked() and counter>0:
+                                    # grab an image at the "highres" field width setting, default setting in the gui_setting
+                                    image = self.acquire_image(hfw=hfw_highres)
                                     # find shift and execute beam shift correction
-                                    _shift = self.microscope.beam_shift_alignment(ref_image=ref_image,
-                                                                                  image=image,
-                                                                                  mode='crosscorrelation')
-                                    image = self.acquire_image() # take finely aligned image
+                                    _ = self.microscope.beam_shift_alignment(ref_image=ref_image_highres,
+                                                                             image=image,
+                                                                             mode='crosscorrelation')
 
+                                # take finely aligned image or if the alignment option is disabled, simply take an image
+                                image = self.acquire_image()
 
                                 utils.save_image(image, path=self.stack_dir, file_name=file_name)
-
-                                if qq==0: # in the beginning of the loop make a reference image
-                                    ref_image = \
-                                        utils.make_copy_of_Adorned_image(image) #copy the aligned image for the next alignment
-
 
                                 self.experiment_data = utils.populate_experiment_data_frame(
                                     data_frame=self.experiment_data,
@@ -634,6 +654,185 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                     self.update_image(image=image)
                 except:
                     self.label_messages.setText('File or mode not supported')
+
+
+
+
+
+
+
+    def setup_EBSD_detector(self):
+        convention = self.comboBox_convention.currentText()
+        Nx = self.spinBox_chip_pixels_x.value()
+        Ny = self.spinBox_chip_pixels_y.value()
+        shape = (Nx, Ny)
+        pc_x = self.doubleSpinBox_pc_x.value()
+        pc_y = self.doubleSpinBox_pc_y.value()
+        pc_z = self.doubleSpinBox_pc_x.value()
+        px_size = self.doubleSpinBox_detector_pixel_size.value()
+        binning = self.spinBox_binning.value()
+        tilt = self.doubleSpinBox_detector_tilt.value()
+        sample_tilt = self.doubleSpinBox_sample_tilt.value()
+        print(convention, shape, (pc_x,pc_y,pc_z), px_size, binning, tilt, sample_tilt)
+        self.detectorEBSD = kp.detectors.EBSDDetector(
+            shape=shape,
+            pc=[pc_x, pc_y, pc_z],
+            convention=convention,
+            px_size=px_size,  # microns
+            binning=binning,
+            tilt=tilt,
+            sample_tilt=sample_tilt
+        )
+        print(self.detectorEBSD)
+        self.pushButton_set_EBSD_detector.setStyleSheet("background-color: green")
+
+
+
+    def _open_EBSD_file(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getOpenFileName(self,
+                                                   "QFileDialog.getOpenFileName()",
+                                                   "", "PMF files (*.pmf);;h5 files (*.h5);;All Files (*)",
+                                                   options=options)
+        if file_name:
+            print(file_name)
+            #################################################
+            ################ data format pmf ################
+            #################################################
+            # data format files saved by PiXet detector
+            if file_name.lower().endswith('.pmf'):
+                metadata_file_name = file_name + '.dsc'
+                ebsd_data = np.loadtxt(file_name)
+                self.update_display(image=ebsd_data)
+                try:
+                    self.detectorEBSD.plot(pattern=ebsd_data)
+                    plt.show()
+                except:
+                    self.label_messages.setText('EBSD detector is not set')
+
+            ################################################
+            ################ data format h5 ################
+            ################################################
+            elif file_name.lower().endswith('.h5'):
+                with h5py.File(file_name, 'r') as f:
+                    acqTime = list(f['Frame_0']['MetaData']['Acq time'])
+                    threshold = list(f['Frame_0']['MetaData']['Threshold'])
+                    ebsd_data = f['Frame_0']['Data']
+                    ebsd_data = np.reshape(ebsd_data, (256, 256))
+                    print('acq time = ', acqTime, 'threshold = ', threshold)
+                self.update_display(image=ebsd_data)
+
+
+            #####################################################
+            ################ data format unknown ################
+            #####################################################
+            # for example numpy array data, or txt format
+            else:
+                try:
+                    ebsd_data = np.loadtxt(file_name)
+                    self.update_display(image=ebsd_data)
+                except:
+                    self.label_messages.setText('File or mode not supported')
+
+                try:
+                    self.detectorEBSD.plot(pattern=ebsd_data)
+                    plt.show()
+                except:
+                    self.label_messages.setText('EBSD detector is not set')
+
+            # except:
+            #     print('Could not read the file, or something else is wrong')
+
+
+
+    def _open_EBSD_stack(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getOpenFileName(self,
+                                                   "QFileDialog.getOpenFileName()",
+                                                   "", "PMF files (*.pmf);;h5 files (*.h5);;hspy files (*.hspy);;All Files (*)",
+                                                   options=options)
+        if file_name:
+            print(file_name)
+            file_dir = os.path.dirname(file_name)
+
+            #################################################
+            ################ data format pmf ################
+            #################################################
+            # data format files saved by PiXet detector
+            if file_name.lower().endswith('.pmf'):
+                try:
+                    if '_ToA' in file_name:
+                        selected_mode = 'TOA'
+                        files = sorted(glob.glob(file_dir + '/' + '*_ToA.pmf'))
+                    elif '_ToT' in file_name:
+                        selected_mode = 'TOT'
+                        files = sorted(glob.glob(file_dir + '/' + '*_ToT.pmf'))
+                    elif '_Event' in file_name:
+                        selected_mode = 'EVENT'
+                        files = sorted(glob.glob(file_dir + '/' + '*_Event.pmf'))
+                    elif '_iToT' in file_name:
+                        selected_mode = 'iTOT'
+                        files = sorted(glob.glob(file_dir + '/' + '*_iTOT.pmf'))
+                    else:
+                        print('File or mode not supported')
+
+                    Nx, Ny = utils.get_Nx_Ny_from_indices(file_dir, files)
+
+                    self.ebsd_stack = hs.signals.Signal2D(np.zeros((Nx,Ny, 256, 256)))
+
+                    for file_name in files:
+                        ebsd_data = np.loadtxt(file_name)
+                        ii, jj = utils.get_indices_from_file_name(file_dir, file_name)
+                        self.ebsd_stack.data[ii][jj] = ebsd_data
+
+                    # convert hs.signals.Signal2D BaseSignal to EBSD (EBSDMasterPattern or VirtualBSEImage)
+                    self.ebsd_stack.set_signal_type("EBSD")
+
+                    # TODO static background file or metadata needed to perform this operation
+                    # static_bg (Union[None, ndarray, Array]) – Static background pattern. If None is passed (default) we try to read it from the signal metadata
+                    # if self.checkBox_remove_static_background.isChecked():
+                    #     print('removing the static background')
+                    #     self.storage_dict[selected_mode].stack.remove_static_background(operation="subtract",
+                    #                                                                     static_bg= ???
+                    #                                                                     relative=True)
+                    if self.checkBox_remove_dynamic_background.isChecked():
+                        print('removing the dynamic background')
+                        self.ebsd_stack.remove_dynamic_background(operation="subtract",  # Default
+                                                                  filter_domain="frequency",  # Default
+                                                                  std=8,  # Default is 1/8 of the pattern
+                                                                  truncate=4)
+                    self.ebsd_stack.plot()
+                    plt.show()
+
+                except:
+                    print('Could not read the file, or something else is wrong')
+
+
+            ################################################
+            ################ data format h5 ################
+            ################################################
+            if file_name.lower().endswith('.h5'):
+                try:
+                    stack = hs.load(file_name)
+                    stack.plot()
+                    plt.show()
+                except:
+                    print('Could not read the file, or something else is wrong')
+
+
+            ################################################
+            ################ data format hspy ################
+            ################################################
+            if file_name.lower().endswith('.hspy'):
+                try:
+                    stack = hs.load(file_name)
+                    stack.plot()
+                    plt.show()
+                except:
+                    print('Could not read the file, or something else is wrong')
+
 
 
 

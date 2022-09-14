@@ -156,7 +156,8 @@ def rotate_about_x(points, angle, image):
 #########################################################################################
 #########################################################################################
 
-DIR_rot_tilt = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rot_tilt__220824.153205'
+# DIR_rot_tilt = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_rot_tilt__220824.153205'
+DIR_rot_tilt = r'C:\Users\sergeyg\Github\DATA.Verios.01\stack_tilt_rot__220901.110316'
 DIR = DIR_rot_tilt
 images = sorted(glob.glob( os.path.join(DIR, '*.tif')))
 
@@ -221,4 +222,8 @@ for i, file_name in enumerate(file_names):
     index_rot = int( np.rad2deg(rotations[i]-rotations[0])//10 - rot_offset-1)
     index_tilt= int(np.rad2deg(tilts[i]-tilts[0]) )
     map[index_tilt, index_rot] = np.sum(aligned[280-2:280+3,350-2:350+3])
+
+plt.figure()
+plt.imshow(COMBINED, cmap='gray')
+plt.show()
 

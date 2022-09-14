@@ -3,6 +3,8 @@ import time
 import os
 import pandas as pd
 import numpy as np
+import re
+from PIL import Image
 
 from importlib import reload  # Python 3.4+
 from dataclasses import dataclass
@@ -173,6 +175,37 @@ def extract_metadata_from_tif(path_to_file):
         return metadata_dict
 
 
+def parse_metadata(path_to_file):
+    # SEM meta data key is 34682, comes as a string
+    img = Image.open(path_to_file)
+    img_metadata = img.tag[34682][0]
+
+    # parse metadata
+    parsed_metadata = img_metadata.split("\r\n")
+
+    metadata_dict = {}
+    for item in parsed_metadata:
+        if item == "":
+            # skip blank lines
+            pass
+        elif re.match("\[(.*?)\]", item):
+            # find category, dont add to dict
+            category = item
+        else:
+            # meta data point
+            datum = item.split("=")
+            # save to dictionary
+            metadata_dict[category + "." + datum[0]] = datum[1]
+
+    # add filename to metadata
+    metadata_dict["filename"] = path_to_file
+
+    # convert to pandas df
+    df = pd.DataFrame.from_dict(metadata_dict, orient="index").T
+
+    return df
+
+
 def make_copy_of_Adorned_image(image):
     copy = AdornedImage()
     AdornedImage._AdornedImage__construct_from_data(copy,
@@ -191,6 +224,33 @@ def rotate_coordinate_in_xy(coord : list = (0,0),
     coord_rot = np.dot(matrix, coord)
     return list(coord_rot)
 
+
+
+def get_indices_from_file_name(file_dir, file_name):
+    file_name = file_name.replace(file_dir, '')
+    temp = file_name.split('_')
+    i = temp[1]
+    j = temp[2]
+    return int(i), int(j)
+
+def get_Nx_Ny_from_indices(files_dir, files):
+    N = len(files)
+    print('Number of files = ', N)
+    files = [file_name.replace(files_dir, '') for file_name in files ]
+    X = []
+    Y = []
+    for file_name in files:
+        temp = file_name.split('_')
+        x = temp[1]
+        y = temp[2]
+        X.append(int(x))
+        Y.append(int(y))
+    X = np.array(X)
+    Y = np.array(Y)
+    Nx = X.max()
+    Ny = Y.max()
+    print(Nx, Ny)
+    return Nx+1, Ny+1
 
 
 if __name__ == '__main__':
@@ -227,3 +287,9 @@ if __name__ == '__main__':
             print(metadata[ii])
         if 'HorFieldsize' in metadata[ii]:
             print(metadata[ii])
+
+
+    df_metadata = parse_metadata(path_to_file='01_tilted.tif')
+    print(f"\nDwelltime = {df_metadata['[Scan].Dwelltime'][0]} s")
+    print(f"Stage tilt = {  np.rad2deg(float(df_metadata['[Stage].StageT'][0])) } deg")
+    print(f"Hor field w = {  float(df_metadata['[Scan].HorFieldsize'][0])/1e-6 } um")

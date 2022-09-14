@@ -78,7 +78,8 @@ class Microscope():
             print('demo: automatically adjusting contrast...')
 
 
-    def acquire_image(self, gui_settings: dict):
+    def acquire_image(self, gui_settings: dict,
+                      hfw = None):
         """Take new electron or ion beam image.
         Returns
         -------
@@ -95,10 +96,13 @@ class Microscope():
         if not self.demo:
             if gui_settings is not None:
                 settings = self.update_image_settings(gui_settings)
-                #print('settings = ', settings)
                 self.microscope.imaging.set_active_view(settings.quadrant)
 
-                hfw = settings.horizontal_field_width
+                if hfw is not None:
+                    hfw = hfw
+                else:
+                    hfw = settings.horizontal_field_width
+
                 if hfw > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
                     hfw = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
                 self.microscope.beams.electron_beam.horizontal_field_width.value = hfw
@@ -127,6 +131,45 @@ class Microscope():
                 height, width = 768, 512
             simulated_image = np.random.randint(0, 255, [height,width])
             return simulated_image
+
+
+
+    def acquire_low_and_high_res_reference_images(self,
+                                                  gui_settings: dict,
+                                                  image_highres=None,
+                                                  hfw_lowres = 100e-6,
+                                                  hfw_highres = 50e-6):
+        if gui_settings is not None:
+            settings = self.update_image_settings(gui_settings)
+            self.microscope.imaging.set_active_view(settings.quadrant)
+            grab_frame_settings = GrabFrameSettings(resolution=settings.resolution,
+                                                    dwell_time=settings.dwell_time,
+                                                    bit_depth=settings.bit_depth)
+        else:
+            grab_frame_settings = GrabFrameSettings()
+
+        if image_highres is not None:
+            try:
+                pixel_size = image_highres.metadata.binary_result.pixel_size.x
+                hfw_highres = pixel_size * image_highres.width
+            except Exception as e :
+                print(f'Cannot estimate the field width from the image supplied, error {e}')
+                hfw_highres = 50e-6
+
+        if hfw_lowres > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
+            hfw_lowres = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
+        if hfw_highres > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
+            hfw_highres = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
+
+        self.microscope.beams.electron_beam.horizontal_field_width.value = hfw_lowres
+        ref_image_lowres = self.microscope.imaging.grab_frame(grab_frame_settings)
+
+        self.microscope.beams.electron_beam.horizontal_field_width.value = hfw_highres
+        ref_image_highres = self.microscope.imaging.grab_frame(grab_frame_settings)
+
+        return ref_image_lowres, ref_image_highres
+
+
 
 
     def last_image(self,  quadrant : int, save : bool = False):

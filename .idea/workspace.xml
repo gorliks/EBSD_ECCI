@@ -2,16 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3e784a18-2f6b-4bad-947b-ba33bb58845a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/EBSD_ECCI.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EBSD_ECCI.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_24_08_2022_4_14_pm_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_24_08_2022_4_14_pm__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SEM.py" beforeDir="false" afterPath="$PROJECT_DIR$/SEM.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/movement.py" beforeDir="false" afterPath="$PROJECT_DIR$/movement.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/qtdesigner_files/main_gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/qtdesigner_files/main_gui.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" beforeDir="false" afterPath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_correlation.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_correlation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_image_transformation.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_image_transformation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_microscope.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_microscope.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_batch_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_batch_alignment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,6 +19,16 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="2EKDJr2OqpCzOvEBJVv18kbNEHt" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
   </component>
   <component name="RunManager" selected="Python.main">
     <configuration name="Unnamed" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
@@ -74,10 +83,27 @@
       </list>
     </recent_temporary>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3e784a18-2f6b-4bad-947b-ba33bb58845a" name="Changes" comment="" />
+      <created>1662335315768</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1662335315768</updated>
+    </task>
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
 </project>
