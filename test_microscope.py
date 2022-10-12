@@ -71,11 +71,32 @@ if __name__ == '__main__':
     print("resolution = ",
           microscope.beams.electron_beam.scanning.resolution.value, 'type = ', type(resolution))
 
-    microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+    # microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+
+    _image = microscope.imaging.get_image()
+    _timestamp = utils.current_timestamp()
+    _file_name = "ecci_" + _timestamp + '.tif'
+    _image.save(_file_name)
 
 
 
-    if 1:
+    """ image adjust test """
+    if 0:
+
+        import cv2
+        clahe = cv2.createCLAHE(clipLimit=15.0, tileGridSize=(128, 128))
+        __image = clahe.apply(_image.data)
+        plt.subplot(1,2,1)
+        plt.imshow(_image.data, cmap='gray')
+        plt.subplot(1,2,2)
+        plt.imshow(__image, cmap='gray')
+        plt.show()
+
+
+
+
+
+    if 0:
         """
             grab a reference image
             manually shift the stage
