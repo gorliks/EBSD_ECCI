@@ -875,7 +875,7 @@ def shift_from_crosscorrelation_simple_images(ref_image, offset_image,
                                               low_pass=256, high_pass=22, sigma=3):
     try:
         ref_image = ref_image.data
-        offset_image = offset_image.date
+        offset_image = offset_image.data
     except:
         ref_image = ref_image
         offset_image = offset_image
@@ -898,7 +898,7 @@ def pixel_shift_from_phase_cross_correlation(ref_image, offset_image):
     # pixel precision
     try:
         ref_image = ref_image.data
-        offset_image = offset_image.date
+        offset_image = offset_image.data
     except:
         ref_image = ref_image
         offset_image = offset_image
@@ -915,7 +915,7 @@ def subpixel_shift_from_crosscorrelation(ref_image, offset_image, upsample_facto
     # subpixel precision
     try:
         ref_image = ref_image.data
-        offset_image = offset_image.date
+        offset_image = offset_image.data
     except:
         ref_image = ref_image
         offset_image = offset_image

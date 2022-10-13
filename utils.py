@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import re
 from PIL import Image
+import cv2
 
 from importlib import reload  # Python 3.4+
 from dataclasses import dataclass
@@ -109,6 +110,7 @@ def current_timestamp():
     return datetime.datetime.fromtimestamp(time.time()).strftime("%y%m%d.%H%M%S")
 
 
+
 def save_image(image, path=None, file_name=None):
     if not path:
         path = os.getcwd()
@@ -117,14 +119,47 @@ def save_image(image, path=None, file_name=None):
         file_name = "no_name_" + timestamp + '.tif'
 
     file_name = os.path.join(path, file_name)
-    #print(file_name)
-
     try:
         """Adorned image needs only path"""
         image.save(file_name)
-
     except Exception as e:
-        print('error {e}, Image could not be saved')
+        print('error {e}, Image is not Adorned, trying to save numpy array to tiff')
+        try:
+            _im = Image.fromarray(image)
+            _im.save(file_name)
+        except Exception as e:
+            print('error {e}, Could not save the image')
+
+
+
+def enhance_contrast(image, clipLimit=1.0, tileGridSize=8):
+    # if image.dtype == 'float64' or 'uint64':
+    #     pass
+
+    # the images needs to be 8bit, otherwise the algorithm does not work TODO fix 8-bit to any-bit
+    image = image / image.max()
+    image = (image * 2 ** 8).astype('uint8')
+
+    tileGridSize = int(tileGridSize)
+
+    clahe = cv2.createCLAHE(clipLimit=clipLimit,
+                            tileGridSize=(tileGridSize, tileGridSize))
+    image = clahe.apply(image)
+    return image
+
+
+def equalise_histogram(image, bitdepth=8):
+    try:
+        _image = image.data
+    except:
+        _image = image
+
+    # _image = _image / _image.max()
+    # _image = (_image * 2 ** bitdepth).astype("uint8")
+
+    _image = cv2.equalizeHist(_image)
+    return _image
+
 
 
 def populate_experiment_data_frame(data_frame : dict,

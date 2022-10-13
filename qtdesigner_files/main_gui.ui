@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1270</width>
-    <height>830</height>
+    <width>1303</width>
+    <height>775</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,7 +102,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="SEM">
         <attribute name="title">
@@ -1866,6 +1866,19 @@
           <string>correlation test</string>
          </property>
         </widget>
+        <widget class="QPushButton" name="pushButton_open_window">
+         <property name="geometry">
+          <rect>
+           <x>280</x>
+           <y>400</y>
+           <width>131</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>open window test</string>
+         </property>
+        </widget>
        </widget>
        <widget class="QWidget" name="tab_3">
         <attribute name="title">
@@ -2231,6 +2244,30 @@
         </widget>
        </widget>
       </widget>
+      <widget class="QLabel" name="label_demo_mode">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>650</y>
+         <width>201</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial Black</family>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
+      </widget>
      </widget>
     </item>
     <item>
@@ -2301,35 +2338,11 @@
         <string/>
        </property>
       </widget>
-      <widget class="QLabel" name="label_demo_mode">
-       <property name="geometry">
-        <rect>
-         <x>560</x>
-         <y>590</y>
-         <width>201</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial Black</family>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
-       </property>
-      </widget>
       <widget class="QDoubleSpinBox" name="doubleSpinBox_point_x">
        <property name="geometry">
         <rect>
          <x>150</x>
-         <y>580</y>
+         <y>595</y>
          <width>91</width>
          <height>22</height>
         </rect>
@@ -2345,7 +2358,7 @@
        <property name="geometry">
         <rect>
          <x>270</x>
-         <y>580</y>
+         <y>595</y>
          <width>91</width>
          <height>22</height>
         </rect>
@@ -2361,7 +2374,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>575</y>
+         <y>590</y>
          <width>141</width>
          <height>31</height>
         </rect>
@@ -2380,7 +2393,7 @@
       <widget class="QPushButton" name="pushButton_open_file">
        <property name="geometry">
         <rect>
-         <x>670</x>
+         <x>20</x>
          <y>540</y>
          <width>93</width>
          <height>25</height>
@@ -2394,7 +2407,7 @@
        <property name="geometry">
         <rect>
          <x>75</x>
-         <y>540</y>
+         <y>658</y>
          <width>101</width>
          <height>22</height>
         </rect>
@@ -2410,7 +2423,7 @@
        <property name="geometry">
         <rect>
          <x>15</x>
-         <y>542</y>
+         <y>660</y>
          <width>71</width>
          <height>16</height>
         </rect>
@@ -2423,7 +2436,7 @@
        <property name="geometry">
         <rect>
          <x>180</x>
-         <y>542</y>
+         <y>660</y>
          <width>31</width>
          <height>16</height>
         </rect>
@@ -2436,7 +2449,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>605</y>
+         <y>620</y>
          <width>141</width>
          <height>31</height>
         </rect>
@@ -2456,7 +2469,7 @@
        <property name="geometry">
         <rect>
          <x>270</x>
-         <y>610</y>
+         <y>625</y>
          <width>91</width>
          <height>22</height>
         </rect>
@@ -2472,7 +2485,7 @@
        <property name="geometry">
         <rect>
          <x>150</x>
-         <y>610</y>
+         <y>625</y>
          <width>91</width>
          <height>22</height>
         </rect>
@@ -2484,6 +2497,123 @@
         <double>1000000.000000000000000</double>
        </property>
       </widget>
+      <widget class="QPushButton" name="pushButton_apply_clahe">
+       <property name="geometry">
+        <rect>
+         <x>560</x>
+         <y>565</y>
+         <width>101</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>8</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Apply CLAHE</string>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox_clip_limit">
+       <property name="geometry">
+        <rect>
+         <x>400</x>
+         <y>572</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>9999</number>
+       </property>
+       <property name="value">
+        <number>10</number>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox_tile_grid_size">
+       <property name="geometry">
+        <rect>
+         <x>480</x>
+         <y>572</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>9999</number>
+       </property>
+       <property name="value">
+        <number>16</number>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_restore">
+       <property name="geometry">
+        <rect>
+         <x>670</x>
+         <y>565</y>
+         <width>91</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>8</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>restore</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_7">
+       <property name="geometry">
+        <rect>
+         <x>480</x>
+         <y>552</y>
+         <width>71</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>tile grid size</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_11">
+       <property name="geometry">
+        <rect>
+         <x>410</x>
+         <y>552</y>
+         <width>55</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>clip limit</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_save_file">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>540</y>
+         <width>93</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Save file</string>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -2493,7 +2623,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1270</width>
+     <width>1303</width>
      <height>26</height>
     </rect>
    </property>

@@ -1,4 +1,3 @@
-import movement
 import qtdesigner_files.main_gui as gui_main
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QObject, QThread, QThreadPool, QTimer, pyqtSignal
@@ -13,6 +12,8 @@ import sys, time, os, glob
 import numpy as np
 import SEM
 import correlation
+import movement
+import ui_utils
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as _FigureCanvas
@@ -78,6 +79,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_abort_stack_collection.setEnabled(False)
         self._abort_clicked_status = False
 
+        self.image = None
+        self.image_mod = None
+        self.current_image = None
+
         # timer on a separate thread
         # self.threadpool = QThreadPool()
         # print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
@@ -104,11 +109,16 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_reset_beam_shift.clicked.connect(lambda: self.reset_beam_shift())
         #
         self.pushButton_correlation.clicked.connect(lambda: self.test_correlation())
+        self.pushButton_open_window.clicked.connect(lambda: self.test_open_window())
         self.pushButton_open_file.clicked.connect(lambda: self._open_file())
+        self.pushButton_save_file.clicked.connect(lambda: self._save_SEM_image())
         #
         self.pushButton_set_EBSD_detector.clicked.connect(lambda: self.setup_EBSD_detector())
         self.pushButton_open_EBSD_file.clicked.connect(lambda: self._open_EBSD_file())
         self.pushButton_open_EBSD_stack.clicked.connect(lambda: self._open_EBSD_stack())
+        #
+        self.pushButton_apply_clahe.clicked.connect(lambda: self._apply_clahe())
+        self.pushButton_restore.clicked.connect(lambda: self._restore_image())
 
 
 
@@ -130,6 +140,13 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         result = window.menu_quit()
         print("Correlation complete, overlayed image dims = ", result.shape)
         self.update_display(image=result)
+
+
+    def test_open_window(self):
+        image_1 = "01_tilted.tif"
+        image = plt.imread(image_1)
+        window = ui_utils.display_image(self, image)
+        window.show()
 
 
 
@@ -324,6 +341,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         # self.toolbar_SEM.deleteLater()
         # self.canvas_SEM = _FigureCanvas(self.figure_SEM)
         ###### end added ######
+
+        self.current_image = image
 
         try:
             image = image.data
@@ -644,18 +663,21 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             print(file_name)
             # data format files saved by PiXet detector
             if file_name.lower().endswith('.tif') or file_name.lower().endswith('.tiff'):
-                image = correlation.load_image(file_name)
-                self.update_display(image=image)
+                self.image = correlation.load_image(file_name)
+                self.update_display(image=self.image)
 
             # other file format, not tiff, for example numpy array data, or txt format
             else:
                 try:
-                    image = np.loadtxt(file_name)
-                    self.update_image(image=image)
+                    self.image = np.loadtxt(file_name)
+                    self.update_image(image=self.image)
                 except:
                     self.label_messages.setText('File or mode not supported')
 
 
+    def _save_SEM_image(self):
+        if self.current_image is not None:
+            utils.save_image(self.current_image)
 
 
 
@@ -704,12 +726,15 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             if file_name.lower().endswith('.pmf'):
                 metadata_file_name = file_name + '.dsc'
                 ebsd_data = np.loadtxt(file_name)
-                self.update_display(image=ebsd_data)
-                try:
-                    self.detectorEBSD.plot(pattern=ebsd_data)
-                    plt.show()
-                except:
-                    self.label_messages.setText('EBSD detector is not set')
+                # self.update_display(image=ebsd_data)
+                window = ui_utils.display_image(self, ebsd_data)
+                window.show()
+                # try:
+                #     self.detectorEBSD.plot(pattern=ebsd_data)
+                #     plt.show()
+                # except:
+                #     self.label_messages.setText('EBSD detector is not set')
+
 
             ################################################
             ################ data format h5 ################
@@ -721,7 +746,9 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                     ebsd_data = f['Frame_0']['Data']
                     ebsd_data = np.reshape(ebsd_data, (256, 256))
                     print('acq time = ', acqTime, 'threshold = ', threshold)
-                self.update_display(image=ebsd_data)
+                # self.update_display(image=ebsd_data)
+                window = ui_utils.display_image(self, ebsd_data)
+                window.show()
 
 
             #####################################################
@@ -731,15 +758,17 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             else:
                 try:
                     ebsd_data = np.loadtxt(file_name)
-                    self.update_display(image=ebsd_data)
+                    # self.update_display(image=ebsd_data)
+                    window = ui_utils.display_image(self, ebsd_data)
+                    window.show()
                 except:
                     self.label_messages.setText('File or mode not supported')
 
-                try:
-                    self.detectorEBSD.plot(pattern=ebsd_data)
-                    plt.show()
-                except:
-                    self.label_messages.setText('EBSD detector is not set')
+                # try:
+                #     self.detectorEBSD.plot(pattern=ebsd_data)
+                #     plt.show()
+                # except:
+                #     self.label_messages.setText('EBSD detector is not set')
 
             # except:
             #     print('Could not read the file, or something else is wrong')
@@ -834,6 +863,19 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                     print('Could not read the file, or something else is wrong')
 
 
+    def _apply_clahe(self):
+        if self.image is not None:
+            clipLimit = int(self.spinBox_clip_limit.value())
+            tileGridSize = int(self.spinBox_tile_grid_size.value())
+            self.image_mod = utils.enhance_contrast(self.image,
+                                                    clipLimit=clipLimit,
+                                                    tileGridSize=tileGridSize)
+            self.update_display(self.image_mod)
+
+
+    def _restore_image(self):
+        if self.image is not None:
+            self.update_display(self.image)
 
 
     def disconnect(self):
