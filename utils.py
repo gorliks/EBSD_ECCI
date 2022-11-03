@@ -161,6 +161,9 @@ def equalise_histogram(image, bitdepth=8):
     return _image
 
 
+def resize(image, size=(200,200)):
+    return cv2.resize(image, size)
+
 
 def populate_experiment_data_frame(data_frame : dict,
                                    keys : list,

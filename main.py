@@ -2,7 +2,7 @@ import qtdesigner_files.main_gui as gui_main
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QObject, QThread, QThreadPool, QTimer, pyqtSignal
 from PyQt5.QtWidgets import QFileDialog
-# import qimage2ndarray
+import qimage2ndarray
 
 from importlib import reload  # Python 3.4+
 
@@ -83,6 +83,9 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.image_mod = None
         self.current_image = None
 
+        self.corr_image_1_path = None
+        self.corr_image_2_path = None
+
         # timer on a separate thread
         # self.threadpool = QThreadPool()
         # print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
@@ -119,6 +122,71 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         #
         self.pushButton_apply_clahe.clicked.connect(lambda: self._apply_clahe())
         self.pushButton_restore.clicked.connect(lambda: self._restore_image())
+        #
+        self.pushButton_select_image_1.clicked.connect(lambda: self._select_corr_image(num=1))
+        self.pushButton_select_image_2.clicked.connect(lambda: self._select_corr_image(num=2))
+        self.pushButton_run_correlation.clicked.connect(lambda: self.run_correlation())
+
+
+
+
+    def run_correlation(self):
+        print('transformation_type = ', self.comboBox_tranformation_type.currentText())
+        if self.corr_image_1_path is not None:
+            if self.corr_image_2_path is not None:
+                window = correlation.open_correlation_window(self,
+                                                             self.corr_image_1_path,
+                                                             self.corr_image_2_path,
+                                                             output_path=None,
+                                                             transformation_type=self.comboBox_tranformation_type.currentText())
+                window.showMaximized()
+                window.show()
+                window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
+
+
+    def correlation_complete(self, window):
+        overlayed_image, transformation = window.menu_quit()
+        print("Correlation complete, overlayed image dims = ", overlayed_image.shape)
+        print(f'transformation = {transformation}')
+
+        theta00 = +np.arccos(transformation.params[0, 0])
+        theta01 = -np.arcsin(transformation.params[0, 1])
+        theta10 = +np.arccos(transformation.params[1, 0])
+        theta11 = +np.arcsin(transformation.params[0, 1])
+
+        shift_x = transformation.params[0, 2]
+        shift_y = transformation.params[1, 2]
+        print(f'rotation angle = {np.rad2deg(theta00)}, shift_x = {shift_x}, shift_y = {shift_y}')
+        self.label_messages.setText(str(f'rotation angle = {np.rad2deg(theta00)}, shift_x = {shift_x}, shift_y = {shift_y}'))
+
+
+        self.update_display(image=overlayed_image)
+        self.label_transformation.setText(str( str(transformation) ) )
+
+
+    def _select_corr_image(self, num=1):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getOpenFileName(self,
+                                                   "QFileDialog.getOpenFileName()",
+                                                   "", "TIF files (*.tif);;TIFF files (*.tiff);;PNG files (*.png);;All Files (*)",
+                                                   options=options)
+        if file_name:
+            print(file_name)
+            if num==1:
+                self.corr_image_1_path = file_name
+                self.label_corr_image_1_path.setText(str(self.corr_image_1_path))
+                image_to_preview = correlation.load_image(self.corr_image_1_path)
+                image_to_preview = utils.resize(image_to_preview, size=(200,200))
+                image_to_preview = qimage2ndarray.array2qimage(image_to_preview.copy())
+                self.label_image_corr_1.setPixmap(QtGui.QPixmap(image_to_preview))
+            elif num==2:
+                self.corr_image_2_path = file_name
+                self.label_corr_image_2_path.setText(str(self.corr_image_2_path))
+                image_to_preview = correlation.load_image(self.corr_image_2_path)
+                image_to_preview = utils.resize(image_to_preview, size=(200,200))
+                image_to_preview = qimage2ndarray.array2qimage(image_to_preview.copy())
+                self.label_image_corr_2.setPixmap(QtGui.QPixmap(image_to_preview))
 
 
 
@@ -136,17 +204,15 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         window.show()
         window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
 
-    def correlation_complete(self, window):
-        result = window.menu_quit()
-        print("Correlation complete, overlayed image dims = ", result.shape)
-        self.update_display(image=result)
-
-
     def test_open_window(self):
         image_1 = "01_tilted.tif"
         image = plt.imread(image_1)
         window = ui_utils.display_image(self, image)
         window.show()
+
+
+
+
 
 
 

@@ -34,13 +34,8 @@ from skimage.transform import AffineTransform
 
 
 
-
-
-
-
-
-
-def open_correlation_window(main_gui, image_1=None, image_2=None, output_path=None):
+def open_correlation_window(main_gui, image_1=None, image_2=None, output_path=None,
+                            transformation_type='Euclidian'):
     """Opens a new window to perform correlation
     Parameters
     ----------
@@ -57,6 +52,9 @@ def open_correlation_window(main_gui, image_1=None, image_2=None, output_path=No
     global image2_path
     global gui
     global output
+    global tform_type
+
+    tform_type = transformation_type
 
     gui = main_gui
     output = output_path
@@ -187,20 +185,20 @@ class _CorrelationWindow(QMainWindow):
 
 
     def menu_quit(self):
-
         matched_points_dict = self.get_dictlist()
         src, dst = point_coords(matched_points_dict)
-        print(src)
-        print(dst)
+        print(f'source points = {src}')
+        print(f'destination points = {dst}')
 
-        # TODO: correlation fix
-        # result, overlay_adorned_image, fluorescence_image_rgb, fluorescence_original = correlate_images(img1, img2, output, matched_points_dict)
-        # result = correlate_images(src_image=image1, target_image=image2, output_path=None,
-        #                           matched_points_dict=matched_points_dict, save=False)
-        result = correlate_images_projective(src_image=image1, target_image=image2, output_path=None,
-                                  matched_points_dict=matched_points_dict, save=False)
+        overlayed_image, transformation = \
+            correlate_images(src_image=image1,
+                             target_image=image2,
+                             output_path=None,
+                             matched_points_dict=matched_points_dict,
+                             save=False,
+                             transformation_type=tform_type)
         self.close()
-        return result
+        return overlayed_image, transformation
 
 
     def get_dictlist(self):
@@ -522,7 +520,9 @@ class _ControlPoint:
 
 
 
-def correlate_images(src_image, target_image, output_path, matched_points_dict, save=False):
+def correlate_images(src_image, target_image, output_path, matched_points_dict,
+                     save=False,
+                     transformation_type='Euclidian'):
     """Correlates two images using points chosen by the user
     Parameters
     ----------
@@ -540,37 +540,31 @@ def correlate_images(src_image, target_image, output_path, matched_points_dict, 
         return
 
     src, dst = point_coords(matched_points_dict)
-    transformation = calculate_transform(src, dst)
+
+    print('Transformation type = ', transformation_type)
+
+    if transformation_type=='Euclidian':
+        transformation = calculate_transform_Euclidean(src, dst)
+    elif transformation_type=='similarity':
+        transformation = calculate_transform_similarity(src, dst)
+    elif transformation_type == 'affinity':
+        transformation = calculate_transform_projective(src, dst)
+    else:
+        transformation = calculate_transform_Euclidean(src, dst)
+
     src_image_aligned = apply_transform(src_image, transformation)
-    result = overlay_images(src_image_aligned, target_image)
-    result = skimage.util.img_as_ubyte(result)
+
+    overlayed_image = overlay_images(src_image_aligned, target_image)
+    overlayed_image = skimage.util.img_as_ubyte(overlayed_image)
 
     # plt.imsave(output_path, result)
     if save:
         pass
         #save result image in
 
-    return result
+    return overlayed_image, transformation
 
 
-def correlate_images_projective(src_image, target_image, output_path, matched_points_dict, save=False):
-
-    if matched_points_dict == []:
-        print('No control points selected, exiting.')
-        return
-
-    src, dst = point_coords(matched_points_dict)
-    transformation = calculate_transform_projective(src, dst)
-    src_image_aligned = apply_transform_projective(src_image, transformation)
-    result = overlay_images(src_image_aligned, target_image)
-    result = skimage.util.img_as_ubyte(result)
-
-    # plt.imsave(output_path, result)
-    if save:
-        pass
-        #save result image in
-
-    return result
 
 
 
@@ -588,7 +582,7 @@ def point_coords(matched_points_dict):
     Returns
     -------
     (src, dst)
-        Row, column coordaintes of source and destination matched points.
+        Row, column coordinates of source and destination matched points.
         Tuple contains two N x 2 ndarrays, where N is the number of points.
     """
 
@@ -600,27 +594,31 @@ def point_coords(matched_points_dict):
     return src, dst
 
 
-def calculate_transform(src, dst, model=AffineTransform()):
-    """Calculate transformation matrix from matched coordinate pairs.
-    Parameters
-    ----------
-    src : ndarray
-        Matched row, column coordinates from source image.
-    dst : ndarray
-        Matched row, column coordinates from destination image.
-    model : scikit-image transformation class, optional.
-        By default, model=AffineTransform()
-    Returns
-    -------
-    ndarray
-        Transformation matrix.
-    """
 
-    model.estimate(src, dst)
-    print('Transformation matrix:')
-    print(model.params)
 
-    return model.params
+def calculate_transform_Euclidean(src, dst):
+    src = np.flip(src, axis=1)
+    dst = np.flip(dst, axis=1)
+    tform = skimage.transform.EuclideanTransform()
+    tform.estimate(dst, src)
+    return tform #.inverse
+
+def calculate_transform_similarity(src, dst):
+    src = np.flip(src, axis=1)
+    dst = np.flip(dst, axis=1)
+    tform = skimage.transform.SimilarityTransform()
+    tform.estimate(dst, src)
+    return tform #.inverse
+
+def calculate_transform_projective(src, dst):
+    src = np.flip(src, axis=1)
+    dst = np.flip(dst, axis=1)
+    tform = skimage.transform.ProjectiveTransform()
+    tform.estimate(dst, src)
+    return tform #.inverse
+
+
+
 
 
 def apply_transform(image, transformation, inverse=True, multichannel=True):
@@ -643,9 +641,11 @@ def apply_transform(image, transformation, inverse=True, multichannel=True):
     ndarray
         Image warped by transformation matrix.
     """
+    print('transformation = ', transformation)
 
-    if inverse:
-        transformation = np.linalg.inv(transformation)
+    # if inverse:
+    #     transformation = np.linalg.inv(transformation)
+
 
     if not multichannel:
         if image.ndim == 2:
@@ -657,38 +657,15 @@ def apply_transform(image, transformation, inverse=True, multichannel=True):
 
     # move channel axis to the front for easier iteration over array
     image = np.moveaxis(image, -1, 0)
-    warped_img = np.array([ndi.affine_transform((img_channel), transformation)
+    # warped_img = np.array([ndi.affine_transform((img_channel), transformation)
+    #                        for img_channel in image])
+    warped_img = np.array([skimage.transform.warp(img_channel, transformation)
                            for img_channel in image])
     warped_img = np.moveaxis(warped_img, 0, -1)
 
     return warped_img
 
 
-
-def calculate_transform_projective(src, dst):
-    src = np.flip(src, axis=1)
-    dst = np.flip(dst, axis=1)
-    tform = skimage.transform.ProjectiveTransform()
-    tform.estimate(src, dst)
-    return tform.inverse
-
-
-def apply_transform_projective(image, transformation, multichannel=True):
-    if not multichannel:
-        if image.ndim == 2:
-            image = skimage.color.gray2rgb(image)
-        elif image.ndim != transformation.shape[0] - 1:
-            raise ValueError('Unexpected number of image dimensions for the '
-                             'input transformation. Did you need to use: '
-                             'multichannel=True ?')
-
-    # move channel axis to the front for easier iteration over array
-    image = np.moveaxis(image, -1, 0)
-    warped_img = np.array([skimage.transform.warp((img_channel), transformation)
-                           for img_channel in image])
-    warped_img = np.moveaxis(warped_img, 0, -1)
-
-    return warped_img
 
 
 def overlay_images(image1, image2, transparency=0.5):
@@ -940,7 +917,7 @@ def correct_image_by_shift(image,
 
 
 def load_image(file_path):
-    image = Image.open(file_path)
+    image = Image.open(file_path).convert('L') # load image .tiff .png .jpg, convert to grayscale
     image = np.array(image, dtype=np.float64)
     return image
 
@@ -955,7 +932,6 @@ if __name__ == '__main__':
     #image2 = load_image("02_flat.tif")
     #image3 = load_image("02_flat_shifted.tif")
 
-
     ANGLE = 27.
     points_rotate_about_x = rotate_about_x(points_on_flat_surface, ANGLE)
     points_rotated = project_3d_point_to_xy(points_rotate_about_x)
@@ -968,7 +944,7 @@ if __name__ == '__main__':
     tform2 = skimage.transform.ProjectiveTransform()
     tform2.estimate(points_on_flat_surface, points_rotated)
     print(tform2)
-    image1_transform = apply_transform_projective(image1, tform2.inverse)
+    image1_transform = apply_transform(image1, tform2.inverse)
     ####################
     plt.figure(32)
     plt.subplot(3, 1, 1)

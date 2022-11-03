@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1303</width>
-    <height>775</height>
+    <width>1285</width>
+    <height>771</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,7 +47,7 @@
          <x>10</x>
          <y>580</y>
          <width>431</width>
-         <height>61</height>
+         <height>91</height>
         </rect>
        </property>
        <property name="frameShape">
@@ -102,7 +102,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="SEM">
         <attribute name="title">
@@ -1853,36 +1853,10 @@
           <string>192.168.0.1</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_correlation">
-         <property name="geometry">
-          <rect>
-           <x>280</x>
-           <y>100</y>
-           <width>131</width>
-           <height>28</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>correlation test</string>
-         </property>
-        </widget>
-        <widget class="QPushButton" name="pushButton_open_window">
-         <property name="geometry">
-          <rect>
-           <x>280</x>
-           <y>400</y>
-           <width>131</width>
-           <height>28</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>open window test</string>
-         </property>
-        </widget>
        </widget>
        <widget class="QWidget" name="tab_3">
         <attribute name="title">
-         <string>---</string>
+         <string>EBSD</string>
         </attribute>
         <widget class="QPushButton" name="pushButton_set_EBSD_detector">
          <property name="geometry">
@@ -2240,6 +2214,219 @@
          </property>
          <property name="text">
           <string>Open EBSD file</string>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QWidget" name="tab">
+        <attribute name="title">
+         <string>Correlation</string>
+        </attribute>
+        <widget class="QPushButton" name="pushButton_select_image_1">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>10</y>
+           <width>101</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Select image 1</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_select_image_2">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>70</y>
+           <width>101</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Select image 2</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_image_corr_1">
+         <property name="geometry">
+          <rect>
+           <x>5</x>
+           <y>130</y>
+           <width>200</width>
+           <height>200</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>64</width>
+           <height>64</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_image_corr_2">
+         <property name="geometry">
+          <rect>
+           <x>215</x>
+           <y>130</y>
+           <width>200</width>
+           <height>200</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>64</width>
+           <height>64</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_transformation">
+         <property name="geometry">
+          <rect>
+           <x>5</x>
+           <y>410</y>
+           <width>411</width>
+           <height>101</height>
+          </rect>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Panel</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_corr_image_1_path">
+         <property name="geometry">
+          <rect>
+           <x>120</x>
+           <y>10</y>
+           <width>301</width>
+           <height>51</height>
+          </rect>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Panel</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_corr_image_2_path">
+         <property name="geometry">
+          <rect>
+           <x>120</x>
+           <y>70</y>
+           <width>301</width>
+           <height>51</height>
+          </rect>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Panel</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_run_correlation">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>360</y>
+           <width>401</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Run correlation on these images</string>
+         </property>
+        </widget>
+        <widget class="QComboBox" name="comboBox_tranformation_type">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>335</y>
+           <width>73</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <item>
+          <property name="text">
+           <string>Euclidian</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>similarity</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>affinity</string>
+          </property>
+         </item>
+        </widget>
+       </widget>
+       <widget class="QWidget" name="tab_2">
+        <attribute name="title">
+         <string>tests</string>
+        </attribute>
+        <widget class="QPushButton" name="pushButton_open_window">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>50</y>
+           <width>131</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>open window test</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_correlation">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>90</y>
+           <width>131</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>correlation test</string>
          </property>
         </widget>
        </widget>
@@ -2623,7 +2810,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1303</width>
+     <width>1285</width>
      <height>26</height>
     </rect>
    </property>
