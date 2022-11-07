@@ -2,14 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5cf63e16-0f79-488a-88fb-9b46b90bd8b4" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_12_10_2022_11_19_am_[Changes]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_12_10_2022_11_19_am__Changes_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/correlation.py" beforeDir="false" afterPath="$PROJECT_DIR$/correlation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/qtdesigner_files/main_gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/qtdesigner_files/main_gui.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" beforeDir="false" afterPath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test_microscope.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_microscope.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -1,5 +1,6 @@
-import os
+import os, glob
 from importlib import reload  # Python 3.4+
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -30,7 +31,7 @@ def open_microscope():
         print(microscope)
         return microscope
     except Exception as e:
-        print(f"SdbMicroscopeClientis unavailable. Unable to create microscope variable: {e}")
+        print(f"SdbMicroscope Client is unavailable. Unable to create microscope variable: {e}")
 
 def initialise(microscope, ip_address="192.168.0.1"):
     try:
@@ -48,35 +49,146 @@ def autocontrast(microscope, quadrant: int = 1) -> None:
     )
     microscope.auto_functions.run_auto_cb()
 
-def update_stage_position(microscope):
+def update_stage_position(microscope) -> StagePosition:
     position = microscope.specimen.stage.current_position
     print(position)
     return position
 
+def append_experimental_data(data_frame : dict,
+                             position : StagePosition,
+                             rotation : float,
+                             file_name : str) -> dict:
+    data_frame['x'].append( position.x)
+    data_frame['y'].append( position.y)
+    data_frame['z'].append( position.z)
+    data_frame['t'].append( position.t)
+    data_frame['r'].append( position.r)
+    data_frame['rotation'].append( rotation)
+    data_frame['file_name'].append(file_name)
+
+    return data_frame
+
+
+
+
+
+
 
 if __name__ == '__main__':
 
-    """
-        Basic tests
-    """
-    microscope = open_microscope()
-    microscope = initialise(microscope)
+    if 1:
+        """
+            Parameters scan and image acquisition
+        """
+        microscope = open_microscope()
+        microscope = initialise(microscope)
 
-    #autocontrast(microscope, quadrant=1)
-    position = update_stage_position(microscope)
+        # autocontrast(microscope, quadrant=1)
 
-    print('hfw limits = ', microscope.beams.electron_beam.horizontal_field_width.limits)
+        # ------------- Store initial position ---------------------
+        position_initial = update_stage_position(microscope)
 
-    resolution = microscope.beams.electron_beam.scanning.resolution.value
-    print("resolution = ",
-          microscope.beams.electron_beam.scanning.resolution.value, 'type = ', type(resolution))
+        # ---------------- make directory to store the images -------------
+        DIR = os.getcwd()
+        sample_name = 'Si_100'
+        scan_dir = os.path.join(DIR, 'stack_' + sample_name + '_' + timestamp)
+        if not os.path.isdir(scan_dir):
+            os.mkdir(scan_dir)
 
-    # microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+        """ create pandas dataframe for collected data and metadata
+            use microscope state to populate the dictionary
+        """
+        keys = ('x', 'y', 'z', 't', 'r') #stage coordinates
+        experiment_data = {element: [] for element in keys}
+        experiment_data['rotation']  = [] # applied rotation in deg
+        experiment_data['file_name'] = []
 
-    _image = microscope.imaging.get_image()
-    _timestamp = utils.current_timestamp()
-    _file_name = "ecci_" + _timestamp + '.tif'
-    _image.save(_file_name)
+        # ---------------- images settings -------------
+        dwell_time = 3e-6
+        grab_frame_settings = GrabFrameSettings(resolution="1024x884", dwell_time=dwell_time)
+
+        # initialise counters
+        counter = 0
+        rot_deg = 0
+
+        file_name = '%06d_' % counter + '_' + str(rot_deg) + 'deg_' + \
+                    utils.current_timestamp() + '.tif'
+
+        image_initial = microscope.imaging.grab_frame(grab_frame_settings)
+        counter += 1 # every time image is taken, the counter is up by +1
+        image_initial.save(os.path.join(scan_dir, file_name))
+        experiment_data = append_experimental_data(data_frame=experiment_data,
+                                                   position=position_initial,
+                                                   rotation=rot_deg,
+                                                   file_name=file_name)
+
+        stage_rotations_deg = [5, 10, 15, 20, 30, 35, 40, 45] # various stage rotations at which to collect image
+        repeats = 5 # repeat 0 rotation -> rot_deg -> 0; rotate, return to the initial position; repeat
+
+        for rot_deg in stage_rotations_deg:
+            for ii in range(repeats):
+                rot_rad = np.deg2rad(rot_deg)
+                stage_settings = MoveSettings(rotate_compucentric=True)
+
+                # rotate, take image, save image, append the dataframe with position/nominal position/image_name
+                microscope.specimen.stage.relative_move(StagePosition(r=rot_rad), stage_settings)
+                position = update_stage_position(microscope)
+                file_name = '%06d_' % counter + '_' + str(rot_deg) + 'deg_' + \
+                        utils.current_timestamp() + '.tif'
+                image = microscope.imaging.grab_frame(grab_frame_settings)
+                counter += 1  # every time image is taken, the counter is up by +1
+                image.save(os.path.join(scan_dir, file_name))
+                experiment_data = append_experimental_data(data_frame=experiment_data,
+                                                           position=position,
+                                                           rotation=rot_deg,
+                                                           file_name=file_name)
+
+                rot_rad = np.deg2rad(-1 * rot_deg) # rotate back
+                # rotate, take image, save image, append the dataframe with position/nominal position/image_name
+                microscope.specimen.stage.relative_move(StagePosition(r=rot_rad), stage_settings)
+                position = update_stage_position(microscope)
+                file_name = '%06d_' % counter + '_' + str(-1*rot_deg) + 'deg_' + \
+                        utils.current_timestamp() + '.tif'
+                image = microscope.imaging.grab_frame(grab_frame_settings)
+                counter += 1  # every time image is taken, the counter is up by +1
+                image.save(os.path.join(scan_dir, file_name))
+                experiment_data = append_experimental_data(data_frame=experiment_data,
+                                                           position=position,
+                                                           rotation=-1*rot_deg,
+                                                           file_name=file_name)
+
+
+        d = pd.DataFrame(data=experiment_data)
+        file_name_data = os.path.join(scan_dir, 'measurement_summary' + '.csv')
+        d.to_csv(file_name_data)
+
+
+
+
+
+
+    if 0:
+        """
+            Basic tests
+        """
+        microscope = open_microscope()
+        microscope = initialise(microscope)
+
+        #autocontrast(microscope, quadrant=1)
+        position = update_stage_position(microscope)
+
+        print('hfw limits = ', microscope.beams.electron_beam.horizontal_field_width.limits)
+
+        resolution = microscope.beams.electron_beam.scanning.resolution.value
+        print("resolution = ",
+              microscope.beams.electron_beam.scanning.resolution.value, 'type = ', type(resolution))
+
+        # microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+
+        _image = microscope.imaging.get_image()
+        _timestamp = utils.current_timestamp()
+        _file_name = "ecci_" + _timestamp + '.tif'
+        _image.save(_file_name)
 
 
 
