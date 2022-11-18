@@ -78,6 +78,63 @@ class Microscope():
             print('demo: automatically adjusting contrast...')
 
 
+    def set_beam_point(self,
+                       beam_x : int = 0,
+                       beam_y : int = 0):
+        """
+        API requires:
+        x : float
+        X coordinate of the spot. The valid range of the coordinate is [0, 1].
+        y : float
+        Y coordinate of the spot. The valid range of the coordinate is [0, 1].
+        ----------
+        Parameters
+        ----------
+        beam_x : int coordinate in pixels
+        beam_y : int coordinate in pixels
+        convert to
+        x, y = beam_x / pixels_in_x, beam_y / pixels_in_y
+
+        Returns None
+        -------
+
+        """
+        if not self.demo:
+            """ current screen resolution """
+            resolution = self.microscope.beams.electron_beam.scanning.resolution.value
+            [width, height] = np.array(resolution.split("x")).astype(int)
+            if beam_x > width  : beam_x = width
+            if beam_y > height : beam_y = height
+            x = float(beam_x) / float(width)
+            y = float(beam_y) / float(height)
+            self.microscope.beams.electron_beam.scanning.mode.set_spot(x, y)
+        else:
+            print(f'demo: setting beam spot coordinates to ({beam_x}, {beam_y})')
+
+
+    def set_full_frame(self):
+        if not self.demo:
+            self.microscope.beams.electron_beam.scanning.mode.set_full_frame()
+        elif self.demo:
+            print('setting scanning mode to full frame...   ')
+
+
+    def beam_blank(self):
+        if not self.demo:
+            _state = self.microscope.beams.electron_beam.is_blanked
+            if _state == True:
+                """ beam state is blanked, unblank it """
+                self.microscope.beams.electron_beam.unblank()
+            elif _state == False:
+                """beam state is not blanked, blank it"""
+                self.microscope.beams.electron_beam.blank()
+
+        elif self.demo:
+            print('demo mode: beam blank/unblank function called...   ')
+
+
+
+
     def acquire_image(self, gui_settings: dict,
                       hfw = None):
         """Take new electron or ion beam image.
@@ -139,35 +196,42 @@ class Microscope():
                                                   image_highres=None,
                                                   hfw_lowres = 100e-6,
                                                   hfw_highres = 50e-6):
-        if gui_settings is not None:
-            settings = self.update_image_settings(gui_settings)
-            self.microscope.imaging.set_active_view(settings.quadrant)
-            grab_frame_settings = GrabFrameSettings(resolution=settings.resolution,
-                                                    dwell_time=settings.dwell_time,
-                                                    bit_depth=settings.bit_depth)
-        else:
-            grab_frame_settings = GrabFrameSettings()
+        if not self.demo:
+            if gui_settings is not None:
+                settings = self.update_image_settings(gui_settings)
+                self.microscope.imaging.set_active_view(settings.quadrant)
+                grab_frame_settings = GrabFrameSettings(resolution=settings.resolution,
+                                                        dwell_time=settings.dwell_time,
+                                                        bit_depth=settings.bit_depth)
+            else:
+                grab_frame_settings = GrabFrameSettings()
 
-        if image_highres is not None:
-            try:
-                pixel_size = image_highres.metadata.binary_result.pixel_size.x
-                hfw_highres = pixel_size * image_highres.width
-            except Exception as e :
-                print(f'Cannot estimate the field width from the image supplied, error {e}')
-                hfw_highres = 50e-6
+            if image_highres is not None:
+                try:
+                    pixel_size = image_highres.metadata.binary_result.pixel_size.x
+                    hfw_highres = pixel_size * image_highres.width
+                except Exception as e :
+                    print(f'Cannot estimate the field width from the image supplied, error {e}')
+                    hfw_highres = 50e-6
 
-        if hfw_lowres > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
-            hfw_lowres = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
-        if hfw_highres > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
-            hfw_highres = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
+            if hfw_lowres > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
+                hfw_lowres = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
+            if hfw_highres > self.microscope.beams.electron_beam.horizontal_field_width.limits.max:
+                hfw_highres = self.microscope.beams.electron_beam.horizontal_field_width.limits.max
 
-        self.microscope.beams.electron_beam.horizontal_field_width.value = hfw_lowres
-        ref_image_lowres = self.microscope.imaging.grab_frame(grab_frame_settings)
+            self.microscope.beams.electron_beam.horizontal_field_width.value = hfw_lowres
+            ref_image_lowres = self.microscope.imaging.grab_frame(grab_frame_settings)
 
-        self.microscope.beams.electron_beam.horizontal_field_width.value = hfw_highres
-        ref_image_highres = self.microscope.imaging.grab_frame(grab_frame_settings)
+            self.microscope.beams.electron_beam.horizontal_field_width.value = hfw_highres
+            ref_image_highres = self.microscope.imaging.grab_frame(grab_frame_settings)
+
+
+        elif self.demo:
+            ref_image_lowres = np.random.randint(0, 255, [512,768])
+            ref_image_highres = np.random.randint(0, 255, [512,768])
 
         return ref_image_lowres, ref_image_highres
+
 
 
 
@@ -686,6 +750,9 @@ class Microscope():
 
     def disconnect(self):
         self.microscope.disconnect()
+
+
+
 
 
 if __name__ == '__main__':

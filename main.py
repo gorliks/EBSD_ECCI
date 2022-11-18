@@ -78,6 +78,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.pushButton_abort_stack_collection.setEnabled(False)
         self._abort_clicked_status = False
+        self._blanked = False
 
         self.image = None
         self.image_mod = None
@@ -110,6 +111,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_update_SEM_state.clicked.connect(lambda: self.update_SEM_state())
         self.pushButton_set_beam_shift.clicked.connect(lambda: self.set_beam_shift())
         self.pushButton_reset_beam_shift.clicked.connect(lambda: self.reset_beam_shift())
+        self.pushButton_set_beam_point.clicked.connect(lambda: self.set_beam_point())
+        self.pushButton_beam_blank.clicked.connect(lambda: self.beam_blank())
+        self.pushButton_set_full_frame.clicked.connect(lambda: self.set_full_frame())
+
         #
         self.pushButton_correlation.clicked.connect(lambda: self.test_correlation())
         self.pushButton_open_window.clicked.connect(lambda: self.test_open_window())
@@ -260,6 +265,25 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.microscope = SEM.Microscope(settings=gui_settings, log_path=None, demo=self.demo)
         self.microscope.establish_connection()
         self.label_messages.setText(str(self.microscope.microscope_state))
+
+
+    def beam_blank(self):
+        self.microscope.beam_blank()
+        self.label_messages.setText("beam blanked/unblanked")
+
+
+    def set_beam_point(self):
+        beam_x = int( self.spinBox_beam_x.value() )
+        beam_y = int( self.spinBox_beam_y.value() )
+        self.microscope.set_beam_point(beam_x=beam_x, beam_y=beam_y)
+        self.label_messages.setText(f"beam position set to ({beam_x}, {beam_y})")
+
+
+    def set_full_frame(self):
+        self.microscope.set_full_frame()
+        self.label_messages.setText(f"set scan mode to full frame")
+
+
 
 
     def acquire_image(self,
@@ -537,7 +561,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             self.microscope.move_stage(z=-1 * self.stack_settings.z_range - self.stack_settings.dz,
                                        move_type="Relative")
 
-        def _run_loop():
+        def _run_loop(gui_settings):
             previous_image = None
             counter = 0
 
@@ -589,7 +613,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                 '''
                                 if qq==0: # take the reference images in the beginning
                                     # TODO better decision for the lowres field width (currently x2)
-                                    hfw_highres = gui_settings["horizontal_field_width"]
+                                    hfw_highres = gui_settings["imaging"]["horizontal_field_width"]
                                     hfw_lowres  = 2 * hfw_highres
                                     #ref_image = utils.make_copy_of_Adorned_image(image) #copy the aligned image for the next alignment
                                     ref_image_lowres, ref_image_highres = \
@@ -645,7 +669,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
                                 counter += 1
 
-        _run_loop()
+        _run_loop(gui_settings)
         self.pushButton_acquire.setEnabled(True)
         self.pushButton_collect_stack.setEnabled(True)
         self.pushButton_estimate_stack_time.setEnabled(True)
