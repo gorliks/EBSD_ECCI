@@ -13,6 +13,8 @@ import numpy as np
 import SEM
 import correlation
 import movement
+import detection as detection
+
 import ui_utils
 
 import matplotlib.pyplot as plt
@@ -77,6 +79,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.stack_settings.x_range = 100
 
         self.pushButton_abort_stack_collection.setEnabled(False)
+        self.pushButton_abort_stack_collection_detector.setEnabled(False)
         self._abort_clicked_status = False
         self._blanked = False
 
@@ -131,92 +134,245 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_select_image_1.clicked.connect(lambda: self._select_corr_image(num=1))
         self.pushButton_select_image_2.clicked.connect(lambda: self._select_corr_image(num=2))
         self.pushButton_run_correlation.clicked.connect(lambda: self.run_correlation())
+        # Detector
+        self.pushButton_initialise_detector.clicked.connect(lambda: self.initialise_detector())
+        self.pushButton_close_detector.clicked.connect(lambda: self.close_detector())
+        self.pushButton_setup_acquisition.clicked.connect(lambda: self.setup_acquisition())
+        self.pushButton_acquire_detector.clicked.connect(lambda: self.single_acquisition())
+        self.pushButton_select_directory.clicked.connect(lambda: self.select_directory())
+        self.pushButton_check_temperature.clicked.connect(lambda: self.update_temperature())
+        self.pushButton_collect_stack_detector.clicked.connect(lambda: self.collect_stack_detector())
+        self.pushButton_abort_stack_collection_detector.clicked.connect(lambda: self._abort_clicked())
+
+
+
+    def collect_stack_detector(self):
+        self.setup_acquisition()  # update the acquisition parameters
+        stamp = utils.current_timestamp()
+        self.sample_id = self.plainTextEdit_sample_name_detector.toPlainText()
+        self.pushButton_abort_stack_collection_detector.setEnabled(True)
+        self.pushButton_acquire_detector.setEnabled(False)
+        self.pushButton_setup_acquisition.setEnabled(False)
+        self.pushButton_check_temperature.setEnabled(False)
+
+        stack_i = self.spinBox_scan_pixels_i.value()  # scan over sample, no. pixels along X
+        stack_j = self.spinBox_scan_pixels_j.value()  # scan over sample, no. pixels along Y
+        x0 = self.spinBox_x0.value()  # start scan from pixel x0
+        y0 = self.spinBox_y0.value()  # start scan from pixel y0
+
+        # initialise the data storage
+        # TODO detector image Nx,Ny settings more generic
+        Nx = 256
+        Ny = 256
+        self.storage_EVENT = hs.signals.Signal2D(np.zeros((stack_i, stack_j,
+                                                           Nx,Ny))) #i,j pixels in the image [Nx,Ny] spectra for each i,j pixel
+        self.storage_iTOT  = hs.signals.Signal2D(np.zeros((stack_i, stack_j,
+                                                           Nx,
+                                                           Ny)))  # i,j pixels in the image [Nx,Ny] spectra for each i,j pixel
+
+
+        if self.DIR:
+            self.stack_dir = self.DIR + '/stack_' + self.sample_id + '_' + stamp
+        else:
+            self.stack_dir = os.getcwd() + '/stack_' + self.sample_id + '_' + stamp
+
+        # the loop will check if abort button is clicked by checking QtWidgets.QApplication.processEvents()
+        # if the abort button was clicked, _return_ will break the _run_loop
+        # TODO use threads for more elegant solution
+        def _run_loop():
+            pixel_counter = 0
+            for ii in range(stack_i):
+                for jj in range(stack_j):
+                    print(x0 + ii, y0 + jj)
+                    self.label_current_i.setText(f'{ii + 1} of {stack_i}')
+                    self.label_current_j.setText(f'{jj + 1} of {stack_j}')
+
+                    file_name = '%06d_' % pixel_counter + str(ii) + '_' + str(jj)
+
+                    """ set point coordinate, unblank beam, colelct data, blank beam """
+                    self.microscope.set_beam_point(beam_x=x0 + ii, beam_y=y0 + jj)
+                    self.microscope.unblank()
+                    # get_data, get_data also does update_image
+                    self.data = self.get_data(save_dir=self.stack_dir, file_name=file_name)
+                    self.microscope.blank()
+
+                    """ store the data in hyperspy stacks """
+                    self.storage_EVENT.data[ii][jj] = self.data['EVENT']
+                    self.storage_iTOT.data[ii][jj]  = self.data['iTOT']
+
+                    """ plot the new data """
+                    self.repaint()  # update the GUI to show the progress
+                    QtWidgets.QApplication.processEvents()
+
+                    if self._abort_clicked_status == True:
+                        print('Abort clicked')
+                        self._abort_clicked_status = False  # reinitialise back to False
+                        return
+                    pixel_counter += 1
+
+        _run_loop()
+
+        # save the stacks
+        if self.checkBox_save_in_h5_format.isChecked():
+            print('saving h5 format')
+            file_name = 'EVENT' + '_stack_' + str(stack_i) + '_' + str(stack_j) + '.h5'
+            file_name = os.path.join(self.stack_dir, file_name)
+            self.storage_EVENT.save(file_name)
+            #####
+            file_name = 'iTOT' + '_stack_' + str(stack_i) + '_' + str(stack_j) + '.h5'
+            file_name = os.path.join(self.stack_dir, file_name)
+            self.storage_iTOT.save(file_name)
+
+        if self.checkBox_save_in_hspy_format.isChecked():
+            print('saving h5 format')
+            file_name = "EVENT" + '_stack_' + str(stack_i) + '_' + str(stack_j) + '.hspy'
+            file_name = os.path.join(self.stack_dir, file_name)
+            self.storage_EVENT.save(file_name)
+            ####
+            file_name = "iTOT" + '_stack_' + str(stack_i) + '_' + str(stack_j) + '.hspy'
+            file_name = os.path.join(self.stack_dir, file_name)
+            self.storage_iTOT.save(file_name)
+
+
+        # Plot the stacks
+        self.storage_EVENT.plot()
+        plt.title('EVENT')
+        self.storage_iTOT.plot()
+        plt.title('iTOT')
+
+        plt.show()
+
+        self.pushButton_abort_stack_collection_detector.setEnabled(False)
+        self.pushButton_acquire_detector.setEnabled(True)
+        self.pushButton_setup_acquisition.setEnabled(True)
+        self.pushButton_check_temperature.setEnabled(True)
 
 
 
 
-    def run_correlation(self):
-        print('transformation_type = ', self.comboBox_tranformation_type.currentText())
-        if self.corr_image_1_path is not None:
-            if self.corr_image_2_path is not None:
-                window = correlation.open_correlation_window(self,
-                                                             self.corr_image_1_path,
-                                                             self.corr_image_2_path,
-                                                             output_path=None,
-                                                             transformation_type=self.comboBox_tranformation_type.currentText())
-                window.showMaximized()
-                window.show()
-                window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
+
+    def initialise_detector(self):
+        path_to_api = self.lineEdit_path_to_detector_API.text()
+        print('****************' , path_to_api, '****************')
+        self.device = detection.Detector(path_to_api=path_to_api)
+        self.device.initialise()
+        if self.device.initialised == True:
+            self.pushButton_initialise_detector.setStyleSheet("background-color: green")
+
+    def close_detector(self):
+        print('closing detector...')
+        self.device.close()
 
 
-    def correlation_complete(self, window):
-        overlayed_image, transformation = window.menu_quit()
-        print("Correlation complete, overlayed image dims = ", overlayed_image.shape)
-        print(f'transformation = {transformation}')
 
-        theta00 = +np.arccos(transformation.params[0, 0])
-        theta01 = -np.arcsin(transformation.params[0, 1])
-        theta10 = +np.arccos(transformation.params[1, 0])
-        theta11 = +np.arcsin(transformation.params[0, 1])
-
-        shift_x = transformation.params[0, 2]
-        shift_y = transformation.params[1, 2]
-        print(f'rotation angle = {np.rad2deg(theta00)}, shift_x = {shift_x}, shift_y = {shift_y}')
-        self.label_messages.setText(str(f'rotation angle = {np.rad2deg(theta00)}, shift_x = {shift_x}, shift_y = {shift_y}'))
+    def update_temperature(self):
+        if not self.demo:
+            temperature = self.device.get_temperature()
+        else:
+            temperature = 'demo mode: ' + str((np.random.rand() + 0.05) * 100)
+        self.label_temperature.setText(str(temperature))
 
 
-        self.update_display(image=overlayed_image)
-        self.label_transformation.setText(str( str(transformation) ) )
+    def setup_acquisition(self):
+        """
+        Retrieve the settings fromt the main GUI window,
+        Prepare the detector for acquisition
+        ******** Currently only uses the EVENT_iTOT mode (Minipix code is able to work with different modalities)
+        Returns
+        -------
+        None
+        """
+        print('setting the acquisition parameters')
+        type = self.comboBox_type_of_measurement.currentText()
+        mode = 'EVENT_iTOT'     #self.comboBox_mode_of_measurement.currentText()
+        number_of_frames = self.spinBox_number_of_frames.value()
+        integration_time = self.spinBox_integration_time.value()
+        energy_threshold_keV = self.spinBox_energy_threshold.value()
+        self.device.setup_acquisition(type=type,
+                                      mode=mode,
+                                      number_of_frames=number_of_frames,
+                                      integration_time=integration_time,
+                                      energy_threshold_keV=energy_threshold_keV)
 
 
-    def _select_corr_image(self, num=1):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        file_name, _ = QFileDialog.getOpenFileName(self,
-                                                   "QFileDialog.getOpenFileName()",
-                                                   "", "TIF files (*.tif);;TIFF files (*.tiff);;PNG files (*.png);;All Files (*)",
-                                                   options=options)
+
+    def single_acquisition(self):
+        self.setup_acquisition()
+        self.get_data()
+
+
+    def get_data(self, save_dir=None, file_name=None, update_display=True):
+        self.update_temperature()
+        stamp = utils.current_timestamp()  # make a timestamp for new file
+
+        if save_dir is not None:
+            save_dir = save_dir
+        elif save_dir==None and self.DIR == None:
+            save_dir = os.getcwd()
+        else:
+            save_dir = self.DIR
+
+
+        if not os.path.isdir(save_dir):
+            os.mkdir(save_dir)
+        print(self.DIR, save_dir)
+
         if file_name:
-            print(file_name)
-            if num==1:
-                self.corr_image_1_path = file_name
-                self.label_corr_image_1_path.setText(str(self.corr_image_1_path))
-                image_to_preview = correlation.load_image(self.corr_image_1_path)
-                image_to_preview = utils.resize(image_to_preview, size=(200,200))
-                image_to_preview = qimage2ndarray.array2qimage(image_to_preview.copy())
-                self.label_image_corr_1.setPixmap(QtGui.QPixmap(image_to_preview))
-            elif num==2:
-                self.corr_image_2_path = file_name
-                self.label_corr_image_2_path.setText(str(self.corr_image_2_path))
-                image_to_preview = correlation.load_image(self.corr_image_2_path)
-                image_to_preview = utils.resize(image_to_preview, size=(200,200))
-                image_to_preview = qimage2ndarray.array2qimage(image_to_preview.copy())
-                self.label_image_corr_2.setPixmap(QtGui.QPixmap(image_to_preview))
+            file_name = save_dir + '/' + file_name + '_' + stamp
+        else:
+            file_name = save_dir + '/' + stamp
+        print(file_name)
+
+        self.integration_time = self.device.integration_time    # TODO update device state in settings self.device.settings['integration_time']
 
 
+        self.pushButton_acquire_detector.setEnabled(False)
+        self.pushButton_setup_acquisition.setEnabled(False)
+        self.pushButton_check_temperature.setEnabled(False)
+        self.repaint()  # update the GUI to show the progress
+
+        self.data = \
+            self.device.acquire(file_name=file_name,
+                                type=self.comboBox_type_of_measurement.currentText(),
+                                mode='EVENT_iTOT')
+
+        self.pushButton_acquire_detector.setEnabled(True)
+        self.pushButton_setup_acquisition.setEnabled(True)
+        self.pushButton_check_temperature.setEnabled(True)
+        self.repaint()  # update the GUI to show the progress
+
+        if update_display==True:
+            image3 = self.data['EVENT']
+            if type(image3) == np.ndarray:
+                self.update_image(quadrant=3, image=image3)
+            image4 = self.data['iTOT']
+            if type(image4) == np.ndarray:
+                self.update_image(quadrant=4, image=image4)
+
+        return self.data
 
 
-
-    def test_correlation(self):
-        image_1 = "01_tilted.tif"
-        image_2 = "02_flat_shifted.tif"
-        #image_2 = "02_flat.tif"
-
-        window = correlation.open_correlation_window(
-            self, image_1, image_2, output_path=None
-        )
-        window.showMaximized()
-        window.show()
-        window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
-
-    def test_open_window(self):
-        image_1 = "01_tilted.tif"
-        image = plt.imread(image_1)
-        window = ui_utils.display_image(self, image)
-        window.show()
-
-
-
+    def update_image(self, quadrant, image, update_current_image=True):
+        self.update_temperature()
+        # _convention_ = self.comboBox_image_convention.currentText()
+        # if _convention_ == 'TEM convention':
+        #     image  = np.flipud(image)
+        # elif _convention_ == 'EBSD convention':
+        #     image = np.flipud(image)
+        #     image = np.fliplr(image)
+        # else:
+        #     pass
+        if update_current_image:
+            # self.data_in_quadrant[quadrant] = image
+            pass
+        image_to_display = qimage2ndarray.array2qimage(image.copy())
+        if quadrant==3:
+            self.label_image_frame3.setPixmap(QtGui.QPixmap(image_to_display))
+        elif quadrant==4:
+            self.label_image_frame4.setPixmap(QtGui.QPixmap(image_to_display))
+        else:
+            self.label_image_frame3.setText('No image acquired')
+            self.label_image_frame4.setText('No image acquired')
 
 
 
@@ -268,8 +424,9 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def beam_blank(self):
-        self.microscope.beam_blank()
-        self.label_messages.setText("beam blanked/unblanked")
+        status = \
+            self.microscope.beam_blank()
+        self.label_messages.setText("beam blanked/unblanked: ", status)
 
 
     def set_beam_point(self):
@@ -689,6 +846,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self._abort_clicked_status = True
 
 
+
+
     def _update_stack_settings(self):
         print('uploading stack settings...')
         self.stack_settings.x_range = self.doubleSpinBox_x_range.value() * 1e-6
@@ -770,9 +929,6 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
             utils.save_image(self.current_image)
 
 
-
-
-
     def setup_EBSD_detector(self):
         convention = self.comboBox_convention.currentText()
         Nx = self.spinBox_chip_pixels_x.value()
@@ -849,7 +1005,7 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                 try:
                     ebsd_data = np.loadtxt(file_name)
                     # self.update_display(image=ebsd_data)
-                    window = ui_utils.display_image(self, ebsd_data)
+                    window = ui_utils.display_image(self, image=ebsd_data)
                     window.show()
                 except:
                     self.label_messages.setText('File or mode not supported')
@@ -922,12 +1078,14 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
                                                                   filter_domain="frequency",  # Default
                                                                   std=8,  # Default is 1/8 of the pattern
                                                                   truncate=4)
-                    self.ebsd_stack.plot()
-                    plt.show()
+                    #self.ebsd_stack.plot()
+                    #plt.show()
+                    window = ui_utils.display_stack(self, ebsd_stack=self.ebsd_stack)
+                    window.show()
+
 
                 except:
                     print('Could not read the file, or something else is wrong')
-
 
             ################################################
             ################ data format h5 ################
@@ -974,6 +1132,104 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         print('closing down, cleaning...')
         if self.microscope:
             self.microscope.disconnect()
+
+
+
+
+
+
+
+
+
+
+
+    def run_correlation(self):
+        print('transformation_type = ', self.comboBox_tranformation_type.currentText())
+        if self.corr_image_1_path is not None:
+            if self.corr_image_2_path is not None:
+                window = correlation.open_correlation_window(self,
+                                                             self.corr_image_1_path,
+                                                             self.corr_image_2_path,
+                                                             output_path=None,
+                                                             transformation_type=self.comboBox_tranformation_type.currentText())
+                window.showMaximized()
+                window.show()
+                window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
+
+
+    def correlation_complete(self, window):
+        overlayed_image, transformation = window.menu_quit()
+        print("Correlation complete, overlayed image dims = ", overlayed_image.shape)
+        print(f'transformation = {transformation}')
+
+        theta00 = +np.arccos(transformation.params[0, 0])
+        theta01 = -np.arcsin(transformation.params[0, 1])
+        theta10 = +np.arccos(transformation.params[1, 0])
+        theta11 = +np.arcsin(transformation.params[0, 1])
+
+        shift_x = transformation.params[0, 2]
+        shift_y = transformation.params[1, 2]
+        print(f'rotation angle = {np.rad2deg(theta00)}, shift_x = {shift_x}, shift_y = {shift_y}')
+        self.label_messages.setText(str(f'rotation angle = {np.rad2deg(theta00)}, shift_x = {shift_x}, shift_y = {shift_y}'))
+
+
+        self.update_display(image=overlayed_image)
+        self.label_transformation.setText(str( str(transformation) ) )
+
+
+    def _select_corr_image(self, num=1):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getOpenFileName(self,
+                                                   "QFileDialog.getOpenFileName()",
+                                                   "", "TIF files (*.tif);;TIFF files (*.tiff);;PNG files (*.png);;All Files (*)",
+                                                   options=options)
+        if file_name:
+            print(file_name)
+            if num==1:
+                self.corr_image_1_path = file_name
+                self.label_corr_image_1_path.setText(str(self.corr_image_1_path))
+                image_to_preview = correlation.load_image(self.corr_image_1_path)
+                image_to_preview = utils.resize(image_to_preview, size=(200,200))
+                image_to_preview = qimage2ndarray.array2qimage(image_to_preview.copy())
+                self.label_image_corr_1.setPixmap(QtGui.QPixmap(image_to_preview))
+            elif num==2:
+                self.corr_image_2_path = file_name
+                self.label_corr_image_2_path.setText(str(self.corr_image_2_path))
+                image_to_preview = correlation.load_image(self.corr_image_2_path)
+                image_to_preview = utils.resize(image_to_preview, size=(200,200))
+                image_to_preview = qimage2ndarray.array2qimage(image_to_preview.copy())
+                self.label_image_corr_2.setPixmap(QtGui.QPixmap(image_to_preview))
+
+
+
+
+
+    def test_correlation(self):
+        image_1 = "01_tilted.tif"
+        image_2 = "02_flat_shifted.tif"
+        #image_2 = "02_flat.tif"
+
+        window = correlation.open_correlation_window(
+            self, image_1, image_2, output_path=None
+        )
+        window.showMaximized()
+        window.show()
+        window.exitButton.clicked.connect(lambda: self.correlation_complete(window))
+
+    def test_open_window(self):
+        image_1 = "01_tilted.tif"
+        image = plt.imread(image_1)
+        window = ui_utils.display_image(self, image)
+        window.show()
+
+
+
+
+
+
+
+
 
 
 def main(demo):

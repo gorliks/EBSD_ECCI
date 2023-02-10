@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1270</width>
-    <height>773</height>
+    <width>1319</width>
+    <height>829</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,7 +47,7 @@
          <x>10</x>
          <y>580</y>
          <width>431</width>
-         <height>91</height>
+         <height>141</height>
         </rect>
        </property>
        <property name="frameShape">
@@ -102,7 +102,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="SEM">
         <attribute name="title">
@@ -1959,7 +1959,7 @@
          </property>
         </widget>
        </widget>
-       <widget class="QWidget" name="tab_3">
+       <widget class="QWidget" name="EBSD">
         <attribute name="title">
          <string>EBSD</string>
         </attribute>
@@ -2286,8 +2286,8 @@
         <widget class="QComboBox" name="comboBox_image_convention">
          <property name="geometry">
           <rect>
-           <x>30</x>
-           <y>350</y>
+           <x>20</x>
+           <y>310</y>
            <width>131</width>
            <height>22</height>
           </rect>
@@ -2322,7 +2322,7 @@
          </property>
         </widget>
        </widget>
-       <widget class="QWidget" name="tab">
+       <widget class="QWidget" name="Correlation">
         <attribute name="title">
          <string>Correlation</string>
         </attribute>
@@ -2504,7 +2504,7 @@
          </item>
         </widget>
        </widget>
-       <widget class="QWidget" name="tab_2">
+       <widget class="QWidget" name="tests">
         <attribute name="title">
          <string>tests</string>
         </attribute>
@@ -2536,11 +2536,954 @@
         </widget>
        </widget>
       </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frame">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <widget class="QLabel" name="label_counter">
+       <property name="geometry">
+        <rect>
+         <x>720</x>
+         <y>595</y>
+         <width>81</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QTabWidget" name="tabWidget_2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>821</width>
+         <height>721</height>
+        </rect>
+       </property>
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <widget class="QWidget" name="Electron">
+        <attribute name="title">
+         <string>SEM</string>
+        </attribute>
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_double_click_point_y">
+         <property name="geometry">
+          <rect>
+           <x>280</x>
+           <y>615</y>
+           <width>91</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <double>-1000000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_save_file">
+         <property name="geometry">
+          <rect>
+           <x>130</x>
+           <y>530</y>
+           <width>93</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Save file</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_restore">
+         <property name="geometry">
+          <rect>
+           <x>680</x>
+           <y>555</y>
+           <width>91</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>restore</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_67">
+         <property name="geometry">
+          <rect>
+           <x>190</x>
+           <y>650</y>
+           <width>31</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>nm</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_point_y">
+         <property name="geometry">
+          <rect>
+           <x>280</x>
+           <y>585</y>
+           <width>91</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <double>-1000000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_31">
+         <property name="geometry">
+          <rect>
+           <x>25</x>
+           <y>650</y>
+           <width>71</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>pixel size</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_apply_clahe">
+         <property name="geometry">
+          <rect>
+           <x>570</x>
+           <y>555</y>
+           <width>101</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Apply CLAHE</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_11">
+         <property name="geometry">
+          <rect>
+           <x>410</x>
+           <y>540</y>
+           <width>55</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>clip limit</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_pixel_size">
+         <property name="geometry">
+          <rect>
+           <x>85</x>
+           <y>648</y>
+           <width>101</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000000.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_double_click_point_x">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>615</y>
+           <width>91</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <double>-1000000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBox_tile_grid_size">
+         <property name="geometry">
+          <rect>
+           <x>490</x>
+           <y>562</y>
+           <width>71</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>9999</number>
+         </property>
+         <property name="value">
+          <number>16</number>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_7">
+         <property name="geometry">
+          <rect>
+           <x>480</x>
+           <y>540</y>
+           <width>71</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>tile grid size</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_image_frame1">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>10</y>
+           <width>768</width>
+           <height>512</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>256</width>
+           <height>256</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_34">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>580</y>
+           <width>141</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>selected point</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_point_x">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>585</y>
+           <width>91</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <double>-1000000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_37">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>610</y>
+           <width>141</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>double click</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_open_file">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>530</y>
+           <width>93</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Open file</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBox_clip_limit">
+         <property name="geometry">
+          <rect>
+           <x>410</x>
+           <y>562</y>
+           <width>71</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>9999</number>
+         </property>
+         <property name="value">
+          <number>10</number>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QWidget" name="DirectElectron">
+        <attribute name="title">
+         <string>Direct Electron Detector</string>
+        </attribute>
+        <widget class="QLabel" name="label_image_frame4">
+         <property name="geometry">
+          <rect>
+           <x>430</x>
+           <y>190</y>
+           <width>256</width>
+           <height>256</height>
+          </rect>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_measurement_type3">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>170</y>
+           <width>55</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Event</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_measurement_type4">
+         <property name="geometry">
+          <rect>
+           <x>430</x>
+           <y>170</y>
+           <width>55</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>iTOT</string>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="lineEdit_path_to_detector_API">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>663</y>
+           <width>261</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>C:\Program Files\PIXet Pro</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_initialise_detector">
+         <property name="geometry">
+          <rect>
+           <x>290</x>
+           <y>660</y>
+           <width>121</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Initialise detector</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_12">
+         <property name="geometry">
+          <rect>
+           <x>80</x>
+           <y>40</y>
+           <width>71</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>No. frames</string>
+         </property>
+        </widget>
+        <widget class="QComboBox" name="comboBox_type_of_measurement">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>60</y>
+           <width>73</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <item>
+          <property name="text">
+           <string>Frames</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Pixels</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Test pulses</string>
+          </property>
+         </item>
+        </widget>
+        <widget class="QLabel" name="label_39">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>40</y>
+           <width>101</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Type</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBox_number_of_frames">
+         <property name="geometry">
+          <rect>
+           <x>90</x>
+           <y>60</y>
+           <width>51</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>1</number>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_13">
+         <property name="geometry">
+          <rect>
+           <x>250</x>
+           <y>40</y>
+           <width>91</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Threshold, keV</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_40">
+         <property name="geometry">
+          <rect>
+           <x>350</x>
+           <y>40</y>
+           <width>91</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Bias, V</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_15">
+         <property name="geometry">
+          <rect>
+           <x>150</x>
+           <y>40</y>
+           <width>111</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Time, s</string>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="spinBox_energy_threshold">
+         <property name="geometry">
+          <rect>
+           <x>250</x>
+           <y>60</y>
+           <width>81</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="value">
+          <double>2.200000000000000</double>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="spinBox_bias_voltage">
+         <property name="geometry">
+          <rect>
+           <x>350</x>
+           <y>60</y>
+           <width>62</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="maximum">
+          <double>200.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>200.000000000000000</double>
+         </property>
+        </widget>
+        <widget class="QDoubleSpinBox" name="spinBox_integration_time">
+         <property name="geometry">
+          <rect>
+           <x>154</x>
+           <y>60</y>
+           <width>81</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="maximum">
+          <double>10000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_acquire_detector">
+         <property name="geometry">
+          <rect>
+           <x>420</x>
+           <y>40</y>
+           <width>101</width>
+           <height>101</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Acquire</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_select_directory_detector">
+         <property name="geometry">
+          <rect>
+           <x>300</x>
+           <y>90</y>
+           <width>100</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>select directory</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_68">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>125</y>
+           <width>91</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Temperature, C</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_check_temperature">
+         <property name="geometry">
+          <rect>
+           <x>120</x>
+           <y>122</y>
+           <width>131</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>check temperature</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_temperature">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>140</y>
+           <width>101</width>
+           <height>21</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_setup_acquisition">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>90</y>
+           <width>261</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>setup acquisition</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_69">
+         <property name="geometry">
+          <rect>
+           <x>31</x>
+           <y>471</y>
+           <width>91</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Sample name:</string>
+         </property>
+        </widget>
+        <widget class="QPlainTextEdit" name="plainTextEdit_sample_name_detector">
+         <property name="geometry">
+          <rect>
+           <x>124</x>
+           <y>467</y>
+           <width>311</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="plainText">
+          <string>HfLaOsF2</string>
+         </property>
+        </widget>
+        <widget class="QCheckBox" name="checkBox_save_in_h5_format">
+         <property name="geometry">
+          <rect>
+           <x>329</x>
+           <y>583</y>
+           <width>81</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>save h5</string>
+         </property>
+        </widget>
+        <widget class="QCheckBox" name="checkBox_save_in_hspy_format">
+         <property name="geometry">
+          <rect>
+           <x>329</x>
+           <y>603</y>
+           <width>81</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>save hspy</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_70">
+         <property name="geometry">
+          <rect>
+           <x>230</x>
+           <y>513</y>
+           <width>20</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <family>Arial Black</family>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>×</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_71">
+         <property name="geometry">
+          <rect>
+           <x>169</x>
+           <y>580</y>
+           <width>31</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>y0</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_72">
+         <property name="geometry">
+          <rect>
+           <x>169</x>
+           <y>560</y>
+           <width>31</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>x0</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBox_x0">
+         <property name="geometry">
+          <rect>
+           <x>189</x>
+           <y>560</y>
+           <width>61</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+          </font>
+         </property>
+         <property name="maximum">
+          <number>5000</number>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_abort_stack_collection_detector">
+         <property name="geometry">
+          <rect>
+           <x>329</x>
+           <y>543</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+           <stylestrategy>NoAntialias</stylestrategy>
+          </font>
+         </property>
+         <property name="text">
+          <string>Abort</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBox_y0">
+         <property name="geometry">
+          <rect>
+           <x>189</x>
+           <y>580</y>
+           <width>61</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+          </font>
+         </property>
+         <property name="maximum">
+          <number>5000</number>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_collect_stack_detector">
+         <property name="geometry">
+          <rect>
+           <x>330</x>
+           <y>507</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>collect stack</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_73">
+         <property name="geometry">
+          <rect>
+           <x>49</x>
+           <y>570</y>
+           <width>101</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Start point, pixels</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBox_scan_pixels_j">
+         <property name="geometry">
+          <rect>
+           <x>251</x>
+           <y>510</y>
+           <width>61</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>3</number>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_74">
+         <property name="geometry">
+          <rect>
+           <x>49</x>
+           <y>513</y>
+           <width>101</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Scan area, pixels</string>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBox_scan_pixels_i">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>510</y>
+           <width>61</width>
+           <height>22</height>
+          </rect>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="value">
+          <number>3</number>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_close_detector">
+         <property name="geometry">
+          <rect>
+           <x>420</x>
+           <y>660</y>
+           <width>121</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Close</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_image_frame3">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>190</y>
+           <width>256</width>
+           <height>256</height>
+          </rect>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_current_i">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>530</y>
+           <width>55</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_current_j">
+         <property name="geometry">
+          <rect>
+           <x>250</x>
+           <y>530</y>
+           <width>55</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </widget>
+      </widget>
       <widget class="QLabel" name="label_demo_mode">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>650</y>
+         <x>630</x>
+         <y>730</y>
          <width>201</width>
          <height>21</height>
         </rect>
@@ -2562,352 +3505,6 @@
       </widget>
      </widget>
     </item>
-    <item>
-     <widget class="QFrame" name="frame">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <widget class="QLabel" name="label_image_frame1">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>20</y>
-         <width>768</width>
-         <height>512</height>
-        </rect>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>256</width>
-         <height>256</height>
-        </size>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Box</enum>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_measurement_type1">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>0</y>
-         <width>55</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>SEM</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_counter">
-       <property name="geometry">
-        <rect>
-         <x>720</x>
-         <y>610</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_point_x">
-       <property name="geometry">
-        <rect>
-         <x>150</x>
-         <y>595</y>
-         <width>91</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <double>-1000000.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-      </widget>
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_point_y">
-       <property name="geometry">
-        <rect>
-         <x>270</x>
-         <y>595</y>
-         <width>91</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <double>-1000000.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_34">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>590</y>
-         <width>141</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>selected point</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_open_file">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>540</y>
-         <width>93</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Open file</string>
-       </property>
-      </widget>
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_pixel_size">
-       <property name="geometry">
-        <rect>
-         <x>75</x>
-         <y>658</y>
-         <width>101</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <double>0.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>1000000000.000000000000000</double>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_31">
-       <property name="geometry">
-        <rect>
-         <x>15</x>
-         <y>660</y>
-         <width>71</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>pixel size</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_67">
-       <property name="geometry">
-        <rect>
-         <x>180</x>
-         <y>660</y>
-         <width>31</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>nm</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_37">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>620</y>
-         <width>141</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>double click</string>
-       </property>
-      </widget>
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_double_click_point_y">
-       <property name="geometry">
-        <rect>
-         <x>270</x>
-         <y>625</y>
-         <width>91</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <double>-1000000.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-      </widget>
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_double_click_point_x">
-       <property name="geometry">
-        <rect>
-         <x>150</x>
-         <y>625</y>
-         <width>91</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <double>-1000000.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_apply_clahe">
-       <property name="geometry">
-        <rect>
-         <x>560</x>
-         <y>565</y>
-         <width>101</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>8</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>Apply CLAHE</string>
-       </property>
-      </widget>
-      <widget class="QSpinBox" name="spinBox_clip_limit">
-       <property name="geometry">
-        <rect>
-         <x>400</x>
-         <y>572</y>
-         <width>71</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>9999</number>
-       </property>
-       <property name="value">
-        <number>10</number>
-       </property>
-      </widget>
-      <widget class="QSpinBox" name="spinBox_tile_grid_size">
-       <property name="geometry">
-        <rect>
-         <x>480</x>
-         <y>572</y>
-         <width>71</width>
-         <height>21</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>9999</number>
-       </property>
-       <property name="value">
-        <number>16</number>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_restore">
-       <property name="geometry">
-        <rect>
-         <x>670</x>
-         <y>565</y>
-         <width>91</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>8</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>restore</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_7">
-       <property name="geometry">
-        <rect>
-         <x>480</x>
-         <y>552</y>
-         <width>71</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>tile grid size</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_11">
-       <property name="geometry">
-        <rect>
-         <x>410</x>
-         <y>552</y>
-         <width>55</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>clip limit</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_save_file">
-       <property name="geometry">
-        <rect>
-         <x>120</x>
-         <y>540</y>
-         <width>93</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Save file</string>
-       </property>
-      </widget>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -2915,7 +3512,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1270</width>
+     <width>1319</width>
      <height>26</height>
     </rect>
    </property>

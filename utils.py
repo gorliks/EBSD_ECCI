@@ -48,7 +48,6 @@ class MicroscopeState:
     beam_shift_y : float = 0
     working_distance : float = 0
 
-
     def __to__dict__(self) -> dict:
         state_dict = {
             "x" : self.x,
@@ -102,6 +101,37 @@ class ImageSettings:
     quadrant: int
     bit_depth: int
 
+
+
+
+@dataclass
+class DetectorState:
+    type : str = 'TPX3'
+    path_to_api : str = ''
+    acquisition_type : str = 'Frames'
+    acquisition_mode : str = 'EVENT_iTOT'
+    number_of_frames : int = 1
+    integration_time : float = 0.25
+    energy_threshold : float = 2.0
+    path_to_data : str = ''
+    detector_info : str = ''
+    detector_full_name : str = ''
+    width : int = 256
+    pixel_count : int = 0
+    chip_id : str = ''
+    chip_count : str = ''
+    temperature : float = 25.5
+
+    def __to__dict__(self) -> dict:
+        state_dict = {
+            "acquisition_type" : self.acquisition_type,
+            "acquisition_mode" : self.acquisition_mode,
+            "number_of_frames" : self.number_of_frames,
+            "integration_time" : self.integration_time,
+            "energy_threshold" : self.energy_threshold,
+            "path_to_data" : self.path_to_data
+        }
+        return state_dict
 
 
 
@@ -250,6 +280,16 @@ def make_copy_of_Adorned_image(image):
                                                     data=image.data)
     copy.metadata = image.metadata
     return copy
+
+
+def read_data_file(file_name):
+    file_name = file_name.replace('\\', '/')
+    if os.path.isfile(file_name):
+        data = np.loadtxt(  file_name  )
+    else:
+        print('file not found')
+        data = None
+    return data
 
 
 def rotate_coordinate_in_xy(coord : list = (0,0),

@@ -83,10 +83,8 @@ class Microscope():
                        beam_y : int = 0):
         """
         API requires:
-        x : float
-        X coordinate of the spot. The valid range of the coordinate is [0, 1].
-        y : float
-        Y coordinate of the spot. The valid range of the coordinate is [0, 1].
+        x : float,  X coordinate of the spot. The valid range of the coordinate is [0, 1].
+        y : float,  Y coordinate of the spot. The valid range of the coordinate is [0, 1].
         ----------
         Parameters
         ----------
@@ -97,7 +95,6 @@ class Microscope():
 
         Returns None
         -------
-
         """
         if not self.demo:
             """ current screen resolution """
@@ -128,11 +125,30 @@ class Microscope():
             elif _state == False:
                 """beam state is not blanked, blank it"""
                 self.microscope.beams.electron_beam.blank()
+            return self.microscope.beams.electron_beam.is_blanked
 
         elif self.demo:
             print('demo mode: beam blank/unblank function called...   ')
+            return 'demo blank'
 
 
+    def blank(self):
+        if not self.demo:
+            self.microscope.beams.electron_beam.blank()
+            return self.microscope.beams.electron_beam.is_blanked
+
+        elif self.demo:
+            print('demo mode: beam blank...   ')
+            return 'demo blank'
+
+    def unblank(self):
+        if not self.demo:
+            self.microscope.beams.electron_beam.unblank()
+            return self.microscope.beams.electron_beam.is_blanked
+
+        elif self.demo:
+            print('demo mode: beam unblank...   ')
+            return 'demo blank'
 
 
     def acquire_image(self, gui_settings: dict,

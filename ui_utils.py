@@ -27,9 +27,14 @@ def display_image(main_gui, image=None):
     return window
 
 
+def display_stack(main_gui, ebsd_stack=None):
+    window = GUIUserWindow(parent=main_gui, display_stack=ebsd_stack)
+    return window
+
+
 
 class GUIUserWindow(new_window.Ui_Dialog, QtWidgets.QDialog):
-    def __init__(self, parent=None, display_image=None):
+    def __init__(self, parent=None, display_image=None, display_stack=None):
         super(GUIUserWindow, self).__init__(parent=parent)
         self.setupUi(self)
 
@@ -44,7 +49,15 @@ class GUIUserWindow(new_window.Ui_Dialog, QtWidgets.QDialog):
 
         # show image
         self.image = display_image
-        self.wp = _WidgetPlot(self, display_image=self.image)
+        self.ebsd_stack = display_stack
+        if self.image is None and display_stack is not None:
+            self.ebsd_stack = display_stack
+            self.image = self.ebsd_stack.data[0][0]
+            plt.figure(22)
+            self.ebsd_stack.plot()
+            plt.show()
+
+        self.wp = _WidgetPlot(self, display_image=self.image, display_stack=self.ebsd_stack)
         self.label_image.setLayout(QtWidgets.QVBoxLayout())
         self.label_image.layout().addWidget(self.wp)
 
@@ -69,7 +82,7 @@ class GUIUserWindow(new_window.Ui_Dialog, QtWidgets.QDialog):
         sip.delete(self.wp)
         self.wp = None
         # make a new widget
-        self.wp = _WidgetPlot(self, display_image=image_mod)
+        self.wp = _WidgetPlot(self, display_image=image_mod, display_stack=None)
         self.label_image.setLayout(QtWidgets.QVBoxLayout())
         self.label_image.layout().addWidget(self.wp)
         self.show()
@@ -82,7 +95,7 @@ class GUIUserWindow(new_window.Ui_Dialog, QtWidgets.QDialog):
         sip.delete(self.wp)
         self.wp = None
         # make a new widget
-        self.wp = _WidgetPlot(self, display_image=self.image)
+        self.wp = _WidgetPlot(self, display_image=self.image, display_stack=None)
         self.label_image.setLayout(QtWidgets.QVBoxLayout())
         self.label_image.layout().addWidget(self.wp)
         self.show()
@@ -94,15 +107,15 @@ class GUIUserWindow(new_window.Ui_Dialog, QtWidgets.QDialog):
 
 
 class _WidgetPlot(QWidget):
-    def __init__(self, *args, display_image, **kwargs):
+    def __init__(self, *args, display_image, display_stack, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
         self.setLayout(QVBoxLayout())
-        self.canvas = _PlotCanvas(self, image=display_image)
+        self.canvas = _PlotCanvas(self, image=display_image, stack=display_stack)
         self.layout().addWidget(self.canvas)
 
 
 class _PlotCanvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None, image=None):
+    def __init__(self, parent=None, image=None, stack=None):
         self.fig = Figure()
         FigureCanvasQTAgg.__init__(self, self.fig)
 
@@ -116,6 +129,7 @@ class _PlotCanvas(FigureCanvasQTAgg):
         )
         FigureCanvasQTAgg.updateGeometry(self)
         self.image = image
+        self.stack = stack
         self.plot()
         self.createConn()
 
@@ -133,6 +147,7 @@ class _PlotCanvas(FigureCanvasQTAgg):
             self.ax11.imshow(self.image,)
         else:
             self.ax11.imshow(self.image, cmap="gray")
+
 
     def updateCanvas(self, event=None):
         ax11_xlim = self.ax11.get_xlim()
