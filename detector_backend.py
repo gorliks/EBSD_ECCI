@@ -136,9 +136,11 @@ def acquire(device,
 
 def close():
     try:
-        pypixet.close()
+        pypixet.exit()
+        return True
     except Exception as e:
         print(f"Could not close pypixet: {e}")
+        return False
 
 
 

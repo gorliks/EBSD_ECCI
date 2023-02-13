@@ -170,6 +170,11 @@ class Detector():
         #
         if not self.demo: # data from the detector, not simulated data
             print('detection filename = ', file_name)
+            if self.number_of_frames <= 0:
+                self.number_of_frames = 1
+            if self.integration_time <= 0:
+                self.integration_time = 0.1
+
             data = hardware.acquire(device=self.device,
                                     number_of_frames=self.number_of_frames,
                                     integration_time=self.integration_time,
@@ -204,9 +209,11 @@ class Detector():
     def close(self):
         if not self.demo: # data from the detector, not simulated data
             print('closing the connection to the detector...')
-            hardware.close()
+            output = hardware.close()
+            return output
         else:
             print('demo mode: closing the detector')
+            return True
 
 
 

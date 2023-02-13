@@ -90,6 +90,8 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
         self.corr_image_1_path = None
         self.corr_image_2_path = None
 
+        self.pushButton_initialise_detector.setStyleSheet("background-color: red")
+
         # timer on a separate thread
         # self.threadpool = QThreadPool()
         # print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
@@ -261,7 +263,10 @@ class GUIMainWindow(gui_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def close_detector(self):
         print('closing detector...')
-        self.device.close()
+        output = self.device.close()
+        if output==True:
+            self.pushButton_initialise_detector.setStyleSheet("background-color: red")
+
 
 
 

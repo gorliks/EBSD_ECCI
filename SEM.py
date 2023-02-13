@@ -765,7 +765,10 @@ class Microscope():
 
 
     def disconnect(self):
-        self.microscope.disconnect()
+        try:
+            self.microscope.disconnect()
+        except:
+            pass # probably demo mode, no microscope connected, continue shutting down
 
 
 
