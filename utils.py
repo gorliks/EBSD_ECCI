@@ -167,7 +167,10 @@ def enhance_contrast(image, clipLimit=1.0, tileGridSize=8):
     #     pass
 
     # the images needs to be 8bit, otherwise the algorithm does not work TODO fix 8-bit to any-bit
-    image = image / image.max()
+    try:
+        image = image / image.max()
+    except:
+        image = image.data / image.data.max()
     image = (image * 2 ** 8).astype('uint8')
 
     tileGridSize = int(tileGridSize)

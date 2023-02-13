@@ -28,7 +28,7 @@ from utils import BeamType
 
 import h5py
 import hyperspy.api as hs
-import kikuchipy as kp
+#import kikuchipy as kp
 
 @dataclass
 class StackSettings:

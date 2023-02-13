@@ -7,8 +7,11 @@ import utils
 
 path_to_pixet = r'C:\Program Files\PIXet Pro'
 sys.path.append(path_to_pixet)
-import pypixet
-pixet = pypixet.pixet
+try:
+    import pypixet
+    pixet = pypixet.pixet
+except Exception as e:
+    print(f"pypixet is unavailable. Unable to load the detector module: {e}")
 
 
 

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import h5py
 import hyperspy.api as hs
-import kikuchipy as kp
+#import kikuchipy as kp
 
 import utils
 
