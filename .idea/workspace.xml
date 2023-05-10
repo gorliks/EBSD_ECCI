@@ -2,13 +2,28 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5cf63e16-0f79-488a-88fb-9b46b90bd8b4" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/EBSD_ECCI.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EBSD_ECCI.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SEM.py" beforeDir="false" afterPath="$PROJECT_DIR$/SEM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/detection.py" beforeDir="false" afterPath="$PROJECT_DIR$/detection.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/detector_backend.py" beforeDir="false" afterPath="$PROJECT_DIR$/detector_backend.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/01_tilted.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/01_tilted.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/02_flat.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/02_flat.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/02_flat_shifted.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/02_flat_shifted.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/correlation.py" beforeDir="false" afterPath="$PROJECT_DIR$/correlation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ebsd_Euler_0_0_0.png" beforeDir="false" afterPath="$PROJECT_DIR$/data/ebsd_Euler_0_0_0.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ebsd_Euler_0_0_0.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/ebsd_Euler_0_0_0.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ebsd_Euler_10_0_0.png" beforeDir="false" afterPath="$PROJECT_DIR$/data/ebsd_Euler_10_0_0.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ebsd_Euler_10_0_0.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/ebsd_Euler_10_0_0.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ebsd_Euler_20_0_0.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/ebsd_Euler_20_0_0.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ebsd_Euler_30_0_0.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/ebsd_Euler_30_0_0.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ebsd_Euler_40_0_0.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/ebsd_Euler_40_0_0.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/image_alignment.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/tests/image_alignment.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" beforeDir="false" afterPath="$PROJECT_DIR$/qtdesigner_files/main_gui.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_align_SEM_images_with_different_tilts.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_align_SEM_images_with_different_tilts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_batch_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_batch_alignment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_correlation.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_correlation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_image_transformation.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_image_transformation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_microscope.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_microscope.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tilt00_000000_rot_tilt__220824.153205.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/tilt00_000000_rot_tilt__220824.153205.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tilt20_000440_rot_tilt__220824.155523.tif" beforeDir="false" afterPath="$PROJECT_DIR$/data/tilt20_000440_rot_tilt__220824.155523.tif" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,6 +40,14 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
   <component name="ProjectId" id="2GyD3cCsvf3FSHZIrBkf4MvvnUx" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -34,6 +57,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/tests" />
   </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -48,7 +72,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\sergeyg\Github\EBSD_ECCI\src\main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
